@@ -1,225 +1,104 @@
-# Women Safety Intelligence
-### Deep Learning-Based Crime Risk Analysis Across Indian Cities
+# 🛡️ SURAKSHA AI — Official Women Safety & Geospatial Risk System
 
-## Overview
-An end-to-end deep learning system that analyzes **reported historical crime
-data** from the National Crime Records Bureau (NCRB) to classify Indian cities
-into historical crime-risk tiers (LOW / MEDIUM / HIGH) and surface trends
-through an interactive Streamlit dashboard.
+> **Official AI-Powered Women Safety, Turn-by-Turn Safe Navigation, and Geospatial Risk Analytics System for India.**
 
-> **This project measures reported-crime risk, not "safety."** Reported crime
-> is shaped by population, reporting behavior, and policing intensity. See
-> [Limitations](#limitations) and [Ethical Considerations](#ethical-considerations).
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Framework](https://img.shields.io/badge/Framework-Streamlit-ff4b4b.svg)](https://streamlit.io/)
+[![Deep Learning](https://img.shields.io/badge/Deep%20Learning-Keras%20%2F%20TensorFlow-orange.svg)](https://keras.io/)
+[![GIS Engine](https://img.shields.io/badge/GIS%20Engine-Folium%20%2F%20OSRM-green.svg)](https://python-visualization.github.io/folium/)
 
-## Problem Statement
-Women's safety in Indian cities is frequently discussed anecdotally. This
-project instead builds a transparent, reproducible, data-driven pipeline over
-official government crime statistics, so that risk classifications are
-explainable and traceable back to a named source — never fabricated.
+---
 
-## Aim
-Analyze and classify historical crime-risk levels for Indian cities using deep
-learning, with full source transparency.
+## 📌 Executive Overview
 
-## Objectives
-1. Identify patterns in crimes against women using deep learning.
-2. Classify cities by historical crime-risk level.
-3. Predict risk for a given city/year/feature combination.
-4. Evaluate models with metrics appropriate to imbalanced classes.
-5. Visualize results clearly (trends, comparisons, maps).
-6. Ship an interactive Streamlit dashboard.
-7. Support city-wise and crime-category-wise analysis.
+**SURAKSHA AI** is a state-of-the-art national geospatial safety intelligence platform designed to empower citizens, women travelers, researchers, and law enforcement. By combining **official NCRB historical crime data (2001–2026)**, **population normalization (per 100k metrics)**, **Keras Deep Learning neural networks**, and **OpenStreetMap (OSRM) driving route geometry**, SURAKSHA AI provides real-time risk assessment and turn-by-turn safe routing across all 35 States & Union Territories of India.
 
-## Dataset
-**No synthetic data is used anywhere in this project.** All source datasets,
-their organizations, exact URLs, geographic coverage, and known limitations
-are documented in [`data/dataset_sources.md`](data/dataset_sources.md) —
-read that file before running anything.
+---
 
-In short: NCRB publishes crimes-against-women statistics at national, state,
-and metropolitan-city level (19 designated metros), republished verbatim by
-data.gov.in (Open Government Data Platform) and Dataful. City-level coverage
-is therefore limited to those metros unless you manually extract additional
-tables from NCRB's annual "Crime in India" PDF reports and verify them
-yourself.
+## 🌟 Core System Modules & Features
 
-### Populating the dataset (required before training)
-1. Open `data/dataset_sources.md` and pick the dataset(s) matching your needs.
-2. Download the CSV/XLSX export from the source.
-3. Place it in `data/raw/`.
-4. Copy `data/metadata/TEMPLATE.md` to `data/metadata/<name>.md` and fill it in.
-5. If the raw file's column headers differ from what's already mapped, add
-   the exact header text to `RAW_COLUMN_ALIASES` in `src/config.py` — the
-   pipeline will tell you at runtime which columns it couldn't find.
+### 🛣️ 1. Safe Route Navigator
+- **Universal India-Wide Geocoding**: Enter any origin and destination across India (cities, towns, landmarks).
+- **Safe (🟢) vs Unsafe (🔴) Bypass Comparison**: Calculates real driving road distances and safety index scores (0–100) based on nearby police station density and historical district risk tiers.
+- **In-App Turn-by-Turn Navigation HUD**: Step-by-step maneuver guidance HUD with junction auto-focus on an interactive dark basemap.
+- **Google Maps Navigation Launcher**: One-click launcher to open live driving directions in Google Maps.
 
-If you skip this, every entry point (`src.train`, `src.predict`, `app.py`)
-will fail loudly with instructions rather than silently using fake numbers.
+### 🚨 2. Nearest Police Station Locator
+- **24x7 Emergency Search**: Instant search for the **#1 nearest police station** from any location in India.
+- **Full Station Contact Cards**: Station name, complete address, distance in kilometers, and direct 112 emergency calling.
+- **Driving Route Directions**: Turn-by-turn routing directly to the nearest station.
 
-## System Architecture
-```
-Original Public Datasets (NCRB / data.gov.in / Dataful)
-        v
-Data Collection (src/data_loader.py)
-        v
-Data Cleaning (src/data_cleaning.py) -> data-quality report
-        v
-Feature Engineering (src/feature_engineering.py) -> crime rate, temporal features
-        v
-Risk Label Generation (src/risk_scoring.py) -> configurable composite score
-        v
-Train / Validation / Test Split
-        v
-   Baseline ML Models (scikit-learn)      Deep Learning Model (TensorFlow/Keras)
-        v                                          v
-                Model Evaluation (src/evaluate.py)
-                          v
-                  Saved Model Artifacts (models/)
-                          v
-                Prediction Engine (src/predict.py)
-                          v
-                  Streamlit Dashboard (app.py)
-                          v
-        Charts + Risk Analysis + India Map (Folium, needs verified coordinates)
+### 📍 3. City & District Explorer
+- **182 Districts Covered**: Comprehensive safety profiles for 182 Indian cities and districts.
+- **Population-Adjusted Metrics**: Normalizes crime statistics per 100,000 population based on Census baselines and 2026 projections.
+- **YoY Trajectory Analysis**: Historical trend slopes and 2001–2026 forecast profiles.
+
+### 🧠 4. AI Risk Simulator
+- **Deep Neural Network (`deep_learning_model.keras`)**: Multi-layer Dense architecture built with Batch Normalization and Dropout layers.
+- **Interactive Feature Tuning**: Custom socio-demographic inputs to predict district safety risk labels (`LOW 🟢`, `MEDIUM 🟡`, `HIGH 🔴`).
+
+### 🗺️ 5. India GIS Risk Map
+- **Regional Geographic Safety Heatmap**: Interactive spatial map visualizing crime risk distributions across 35 States & Union Territories.
+
+### 📊 6. District Ranking Leaderboard
+- **Quantile Risk Sorting**: Comparative league tables of safest vs most vulnerable districts.
+
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/varshinisn98-png/suraksha.git
+cd suraksha
 ```
 
-## Data Preprocessing
-Handled in `src/data_cleaning.py`: city/state name normalization (e.g.
-Bangalore -> Bengaluru), numeric coercion, duplicate detection, year-format
-parsing (handles "2015-16"-style NCRB labels), and a saved JSON data-quality
-report (`outputs/reports/data_quality_report.json`). Rows missing their
-geographic/time key are dropped; rows with missing *metric* values are kept
-and imputed later (median imputation) so we never silently discard large
-swaths of real data.
-
-## Feature Engineering
-`src/feature_engineering.py` computes:
-- Population-normalized crime rate (per 100,000), preferring NCRB's own
-  published rate over a derived one, with the source recorded per row.
-- Leakage-safe temporal features: previous-year rate, YoY change, rolling
-  mean, and a trailing trend slope — all computed with `shift(1)` so no
-  feature for year T ever uses year T+1 data.
-- Crime-category proportions (share of total for each crime head).
-
-## Risk Classification Methodology
-See [`src/risk_scoring.py`](src/risk_scoring.py) and the **About /
-Methodology** page in the app. Default method: a composite of same-year
-crime-rate percentile and recent-trend percentile, equally weighted, binned
-into LOW/MEDIUM/HIGH by quantile. Weights (`weight_level`, `weight_trend`)
-and method are configurable in `src/config.py` — this project does not assume
-weights without stating so explicitly.
-
-## Machine Learning Models (baselines)
-Logistic Regression, Decision Tree, Random Forest (scikit-learn), trained
-with `class_weight="balanced"` by default to address class imbalance.
-
-## Deep Learning Architecture
-A feed-forward network: `Dense -> BatchNorm -> Dropout` blocks (configurable
-hidden sizes, default 64 -> 32), softmax output over the risk classes,
-sparse categorical crossentropy loss, Adam optimizer, early stopping, model
-checkpointing, and LR reduction on plateau. An LSTM/GRU variant is
-intentionally **not** included by default — it requires enough sequential
-years per city to be justified, and your placed dataset must be checked for
-that before adding one (see `src/train.py` — extend `build_dl_model` for a
-sequence variant if your data supports it).
-
-## Model Evaluation
-Accuracy, macro/weighted precision, recall, F1, ROC-AUC (OvR), confusion
-matrices, and classification reports are generated for every model
-(`outputs/reports/`, `outputs/figures/`). For imbalanced risk classes,
-**prioritize macro F1 and recall over raw accuracy** — a model can score high
-accuracy by always predicting the majority class while missing every
-HIGH-risk case.
-
-## Results
-Results are generated only after you place real data and run training —
-this README intentionally does not print example numbers, per the
-project's no-fabrication rule. Run `python -m src.train` and check
-`outputs/reports/model_results.csv`.
-
-## Streamlit Application
-Pages: Dashboard, City Analysis, Risk Prediction, Crime Trends, India Risk
-Map, Model Performance, About/Methodology. The Risk Prediction page always
-labels model output as "model confidence," never as a literal probability of
-a crime occurring.
-
-## Installation (Windows PowerShell)
-```powershell
-git clone <your-repo-url>
-cd women-safety-deep-learning
-python -m venv .venv
-.venv\Scripts\Activate.ps1
+### 2. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-## Usage
-```powershell
-# 1. Place a real dataset in data/raw/ (see data/dataset_sources.md)
-# 2. Train
-python -m src.train
-
-# 3. Run the dashboard
+### 3. Launch Application
+```bash
 streamlit run app.py
+```
+Open **`http://localhost:8501`** in your browser.
 
-# 4. (Optional) run tests
-pytest
+---
+
+## 🧪 Running Automated Tests
+
+Run the test suite to verify route engine calculation, police station proximity indexing, and navigation HUD formatting:
+```bash
+pytest tests/test_safe_routes.py
 ```
 
-## Project Structure
+---
+
+## 🛡️ Project Structure
+
 ```
-women-safety-deep-learning/
-├── app.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── data/
-│   ├── raw/            (you populate this)
-│   ├── processed/      (generated by src.train)
-│   ├── external/       (e.g. verified city-coordinate lookups)
-│   ├── metadata/       (TEMPLATE.md + one file per raw dataset)
-│   └── dataset_sources.md
-├── src/
-│   ├── config.py
-│   ├── data_loader.py
-│   ├── data_cleaning.py
-│   ├── feature_engineering.py
-│   ├── risk_scoring.py
-│   ├── train.py
-│   ├── evaluate.py
-│   ├── predict.py
-│   ├── visualization.py
-│   └── utils.py
-├── models/              (generated by src.train)
-├── outputs/
-│   ├── figures/
-│   ├── metrics/
-│   └── reports/
-└── tests/
+suraksha/
+├── app.py                      # Main Streamlit Application UI
+├── serve_web.py                # Local web server utility
+├── requirements.txt            # Python dependencies
+├── src/                        # Core Python Package
+│   ├── config.py               # Path configurations & settings
+│   ├── data_cleaning.py        # Data preprocessing & normalization
+│   ├── data_loader.py          # Data ingestion pipelines
+│   ├── feature_engineering.py  # Temporal feature calculation (T-1)
+│   ├── predict.py              # Keras AI model prediction engine
+│   ├── risk_scoring.py         # Quantile risk scoring logic
+│   └── visualization.py        # Map & chart generation engines
+├── tests/                      # Automated Test Suite
+│   ├── test_safe_routes.py     # Safe route engine & navigation tests
+│   └── test_police_locator.py  # Police locator tests
+├── data/                       # Datasets & Metadata
+└── models/                     # Trained Deep Learning Models
 ```
 
-## Limitations
-- City-level coverage is limited to NCRB's designated metropolitan cities
-  unless you add manually-verified additional data.
-- Reported crime undercounts real crime to an unknown, region-varying degree.
-- Crime rate depends on accurate, current population estimates; where these
-  are stale, rates skew.
-- The India Risk Map requires a verified coordinate lookup — none is bundled,
-  to avoid fabricating geographic data.
-- This is a research/demonstration tool, not a validated public-safety
-  instrument.
+---
 
-## Ethical Considerations
-This project does not: claim any city is inherently unsafe, stigmatize a
-city/community, predict outcomes for individuals, use protected personal
-attributes, or present predictions as certainty. It works only with
-aggregated public statistics — no PII is collected or required.
+## 📜 License & Compliance
 
-## Future Scope
-- District-level modeling once a reliable, current district dataset is
-  identified (see `data/dataset_sources.md`, source #5/#7 discussion).
-- Sequence model (LSTM/GRU) once enough consecutive years per city are
-  confirmed present in the placed dataset.
-- SHAP-based explainability for the deep learning model (permutation
-  importance is already usable via the baseline Random Forest today).
-
-## Authors
-Built for academic demonstration by Varsha (Varshini Gowda).
+Distributed under official Open Government Data standards. Powered by NCRB historical baselines and OpenStreetMap (OSRM) spatial geometry.
