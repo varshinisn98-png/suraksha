@@ -1,0 +1,13 @@
+[
+  "crime_rate",
+  "crime_rate_prev_year",
+  "crime_rate_yoy_change",
+  "crime_rate_yoy_pct_change",
+  "crime_rate_rolling_mean",
+  "crime_rate_trend_slope",
+  "rape_cases_share",
+  "kidnapping_abduction_cases_share",
+  "dowry_death_cases_share",
+  "assault_on_modesty_cases_share",
+  "cruelty_498a_cases_share"
+]

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Women Safety Intelligence AI — Official Deep Learning Platform</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Leaflet.js Dark Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Ambient Background Glow Mesh -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="top-nav-layout">
+        <!-- TOP NAVIGATION BAR (UPSIDE) -->
+        <header class="top-navbar">
+            <div class="top-nav-container">
+                <div class="top-brand">
+                    <div class="top-brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="top-brand-text">
+                        <div class="brand-name">Women Safety <span class="brand-ai">AI</span></div>
+                        <div class="brand-gov-tag">National Intelligence Platform</div>
+                    </div>
+                </div>
+
+                <nav class="top-nav-menu">
+                    <button class="top-nav-item active" data-tab="home"><i class="fa-solid fa-house"></i> Home</button>
+                    <button class="top-nav-item" data-tab="overview"><i class="fa-solid fa-chart-pie"></i> Overview</button>
+                    <button class="top-nav-item" data-tab="city-explorer"><i class="fa-solid fa-location-dot"></i> City & District Explorer</button>
+                    <button class="top-nav-item" data-tab="risk-calculator"><i class="fa-solid fa-brain"></i> AI Risk Calculator</button>
+                    <button class="top-nav-item" data-tab="district-matrix"><i class="fa-solid fa-table-list"></i> District Matrix</button>
+                    <button class="top-nav-item" data-tab="gis-map"><i class="fa-solid fa-map-location-dot"></i> GIS Risk Map</button>
+                    <button class="top-nav-item" data-tab="model-scorecard"><i class="fa-solid fa-trophy"></i> Model Scorecard</button>
+                </nav>
+
+                <div class="top-status-badge">
+                    <span class="pulse-dot"></span> SYSTEM ONLINE &bull; 2001–2026
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content-top">
+            
+            <!-- DEFAULT TAB 1: OFFICIAL SAFETY HOME PAGE -->
+            <section id="tab-home" class="tab-page active">
+                <div class="official-hero glass-card">
+                    <div class="official-seal-badge">
+                        <i class="fa-solid fa-building-columns"></i> OFFICIAL AI RISK ANALYTICS & RESEARCH PLATFORM
+                    </div>
+                    <h1 class="official-hero-title">National Women Safety Intelligence Platform</h1>
+                    <p class="official-hero-subtitle">
+                        An end-to-end deep learning platform analyzing official National Crime Records Bureau (NCRB) historical crime data and population projections across 182 Indian cities and districts (2001–2026).
+                    </p>
+
+                    <div class="official-hero-ctas">
+                        <button class="cta-btn primary-cta" onclick="switchTab('city-explorer')">
+                            <i class="fa-solid fa-magnifying-glass-location"></i> Explore Karnataka & All India Cities
+                        </button>
+                        <button class="cta-btn secondary-cta" onclick="switchTab('risk-calculator')">
+                            <i class="fa-solid fa-brain"></i> Test AI Risk Simulator
+                        </button>
+                        <button class="cta-btn outline-cta" onclick="switchTab('gis-map')">
+                            <i class="fa-solid fa-map"></i> View GIS Risk Map
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Executive Summary Metrics -->
+                <div class="stats-grid">
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon"><i class="fa-solid fa-city"></i></div>
+                        <div class="stat-meta">
+                            <div class="stat-label">Coverage Universe</div>
+                            <div class="stat-value">182 Cities & Districts</div>
+                            <div class="stat-sub">Includes All 31 Karnataka Districts</div>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-purple"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div class="stat-meta">
+                            <div class="stat-label">Timeline Horizon</div>
+                            <div class="stat-value">2001 – 2026</div>
+                            <div class="stat-sub">26 Years Historical & Forecast</div>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="stat-meta">
+                            <div class="stat-label">AI Model Accuracy</div>
+                            <div class="stat-value">96.57%</div>
+                            <div class="stat-sub">Random Forest & DNN Ensemble</div>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-card">
+                        <div class="stat-icon icon-cyan"><i class="fa-solid fa-map-location"></i></div>
+                        <div class="stat-meta">
+                            <div class="stat-label">Geographic Scope</div>
+                            <div class="stat-value">35 States & UTs</div>
+                            <div class="stat-sub">All Indian Regions Mapped</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Core Pillars of Safety & Risk Analytics -->
+                <h2 class="section-title"><i class="fa-solid fa-shield"></i> Core Pillars of Safety & AI Risk Analytics</h2>
+                <div class="pillars-grid grid-2">
+                    <div class="pillar-card glass-card">
+                        <div class="pillar-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                        <div class="pillar-content">
+                            <h3>1. Evidence-Based Crime Rate Normalization</h3>
+                            <p>Every risk metric is population-adjusted per 100,000 residents based on official Census of India enumeration (2001, 2011) and projected demographics up to 2026. Avoids raw count bias across small vs metropolis regions.</p>
+                        </div>
+                    </div>
+
+                    <div class="pillar-card glass-card">
+                        <div class="pillar-icon icon-purple"><i class="fa-solid fa-network-wired"></i></div>
+                        <div class="pillar-content">
+                            <h3>2. Leakage-Safe Deep Learning Neural Networks</h3>
+                            <p>Feed-forward neural network architecture featuring Dense, Batch Normalization, and Dropout layers. Features for year T use strictly shifted historical data (T-1) to ensure zero future-data leakage.</p>
+                        </div>
+                    </div>
+
+                    <div class="pillar-card glass-card">
+                        <div class="pillar-icon icon-green"><i class="fa-solid fa-layer-group"></i></div>
+                        <div class="pillar-content">
+                            <h3>3. Transparent Risk Tier Classification</h3>
+                            <p>Cities and districts are binned into <b>LOW</b> 🟢, <b>MEDIUM</b> 🟡, and <b>HIGH</b> 🔴 historical risk tiers using cross-sectional composite percentile ranks of crime rate level and trailing trend trajectory.</p>
+                        </div>
+                    </div>
+
+                    <div class="pillar-card glass-card">
+                        <div class="pillar-icon icon-red"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="pillar-content">
+                            <h3>4. 2001–2026 Predictive Trajectory Forecasting</h3>
+                            <p>Provides research-grade forecasts through 2026 for 182 districts across India, helping public policy researchers, citizens, and safety analysts examine long-term statistical trends.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Official Disclaimer Banner -->
+                <div class="official-disclaimer glass-card">
+                    <div class="disclaimer-title"><i class="fa-solid fa-circle-info"></i> Official Data Standard & Safety Context</div>
+                    <div class="disclaimer-body">
+                        This platform measures <b>reported historical crime data & statistical projections</b>. Reported crime statistics reflect police reporting practices, population density, policing intensity, and societal reporting behavior — not a literal measure of individual safety or guaranteed future events. All data is derived from NCRB open records and official Census projections.
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: OVERVIEW DASHBOARD -->
+            <section id="tab-overview" class="tab-page">
+                <div class="charts-row grid-2" style="margin-top: 1rem;">
+                    <div class="chart-box glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-ranking-star"></i> Top High-Risk Cities/Districts (2026 Projections)</h3>
+                        </div>
+                        <canvas id="overview-ranking-chart" height="280"></canvas>
+                    </div>
+                    <div class="chart-box glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> National Crime Head Distribution</h3>
+                        </div>
+                        <canvas id="overview-category-chart" height="280"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: CITY & DISTRICT EXPLORER -->
+            <section id="tab-city-explorer" class="tab-page">
+                <div class="search-bar-box glass-card">
+                    <div class="search-controls">
+                        <div class="field-group">
+                            <label><i class="fa-solid fa-flag"></i> Filter State</label>
+                            <select id="explorer-state-select" class="custom-select">
+                                <option value="Karnataka">Karnataka (All 31 Districts)</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label><i class="fa-solid fa-building"></i> Select City / District</label>
+                            <select id="explorer-city-select" class="custom-select"></select>
+                        </div>
+                        <div class="field-group">
+                            <label><i class="fa-solid fa-calendar"></i> Select Target Year Timeline</label>
+                            <div class="range-box">
+                                <input type="range" id="explorer-year-slider" min="2001" max="2026" value="2026" step="1">
+                                <span class="year-badge" id="explorer-year-val">2026</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- City Profile Banner -->
+                <div class="city-profile-banner glass-card" id="city-profile-card">
+                    <div class="profile-header">
+                        <div>
+                            <h2 class="city-title" id="profile-city-name">Bengaluru Urban</h2>
+                            <div class="city-state-tag" id="profile-state-name">State: Karnataka &bull; Year: 2026</div>
+                        </div>
+                        <div class="risk-badge-large" id="profile-risk-badge">HIGH RISK TIER</div>
+                    </div>
+
+                    <div class="profile-metrics-row">
+                        <div class="p-metric">
+                            <div class="p-label">Crime Rate (per 100k)</div>
+                            <div class="p-val" id="profile-rate">42.8</div>
+                            <div class="p-delta" id="profile-rate-delta">+1.4 vs previous year</div>
+                        </div>
+                        <div class="p-metric">
+                            <div class="p-label">Total Reported Crimes</div>
+                            <div class="p-val" id="profile-crimes">6,077</div>
+                            <div class="p-sub">Police Recorded Cases</div>
+                        </div>
+                        <div class="p-metric">
+                            <div class="p-label">Estimated Population</div>
+                            <div class="p-val" id="profile-pop">14.2 Million</div>
+                            <div class="p-sub">Census Projection</div>
+                        </div>
+                        <div class="p-metric">
+                            <div class="p-label">YoY Trajectory</div>
+                            <div class="p-val" id="profile-trajectory">Rising</div>
+                            <div class="p-sub">Trailing Trend Slope</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-row grid-2">
+                    <div class="chart-box glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-chart-line"></i> Crime Rate Trend & 2026 Forecast Curve</h3>
+                        </div>
+                        <canvas id="city-trend-chart" height="260"></canvas>
+                    </div>
+                    <div class="chart-box glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-pie-chart"></i> Crime Category Breakdown</h3>
+                        </div>
+                        <canvas id="city-category-chart" height="260"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: AI RISK CALCULATOR -->
+            <section id="tab-risk-calculator" class="tab-page">
+                <div class="calculator-layout grid-2">
+                    <div class="calc-inputs glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-sliders"></i> Input Risk Parameters</h3>
+                            <p class="box-desc">Adjust crime metrics to simulate real-time Deep Neural Network risk predictions.</p>
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Reported Crime Rate (per 100k)</span><b id="val-rate">25.0</b></div>
+                            <input type="range" id="calc-rate" min="0" max="150" value="25" step="0.5">
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Trailing Trend Slope (YoY Change)</span><b id="val-slope">+1.2</b></div>
+                            <input type="range" id="calc-slope" min="-10" max="10" value="1.2" step="0.1">
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Rape Case Share (%)</span><b id="val-rape">15%</b></div>
+                            <input type="range" id="calc-rape" min="0" max="50" value="15" step="1">
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Kidnapping & Abduction Share (%)</span><b id="val-kidnapp">22%</b></div>
+                            <input type="range" id="calc-kidnapp" min="0" max="50" value="22" step="1">
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Assault on Modesty Share (%)</span><b id="val-assault">28%</b></div>
+                            <input type="range" id="calc-assault" min="0" max="50" value="28" step="1">
+                        </div>
+
+                        <div class="calc-field">
+                            <div class="field-label"><span>Cruelty by Husband/Relatives Share (%)</span><b id="val-cruelty">35%</b></div>
+                            <input type="range" id="calc-cruelty" min="0" max="60" value="35" step="1">
+                        </div>
+                    </div>
+
+                    <div class="calc-results glass-card">
+                        <div class="box-header">
+                            <h3><i class="fa-solid fa-brain"></i> Neural Network Prediction</h3>
+                        </div>
+
+                        <div class="prediction-display">
+                            <div class="pred-tier-box" id="calc-tier-box">
+                                <div class="pred-label">Predicted Risk Tier</div>
+                                <div class="pred-tier-name" id="calc-pred-tier">MEDIUM RISK</div>
+                            </div>
+
+                            <div class="confidence-box">
+                                <div class="conf-label">Model Confidence Score</div>
+                                <div class="conf-bar-bg"><div class="conf-bar-fill" id="calc-conf-fill" style="width: 87%;"></div></div>
+                                <div class="conf-val" id="calc-conf-val">87.4%</div>
+                            </div>
+                        </div>
+
+                        <div class="chart-box-inner" style="margin-top: 1.5rem;">
+                            <h4>Class Probability Spectrum</h4>
+                            <canvas id="calc-prob-chart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: DISTRICT RANKING MATRIX -->
+            <section id="tab-district-matrix" class="tab-page">
+                <div class="matrix-header glass-card">
+                    <div class="matrix-controls">
+                        <div class="search-input-wrap">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="matrix-search" placeholder="Search any city or district (e.g., Bengaluru, Mysuru, Pune)...">
+                        </div>
+                        <select id="matrix-year-select" class="custom-select" style="width: 160px;">
+                            <option value="2026" selected>Year 2026</option>
+                            <option value="2025">Year 2025</option>
+                            <option value="2020">Year 2020</option>
+                            <option value="2012">Year 2012</option>
+                            <option value="2001">Year 2001</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container glass-card">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>City / District</th>
+                                <th>State / UT</th>
+                                <th>Year</th>
+                                <th>Crime Rate (per 100k)</th>
+                                <th>Total Crimes</th>
+                                <th>Population</th>
+                                <th>Risk Tier</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-table-body">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 6: INTERACTIVE GIS MAP -->
+            <section id="tab-gis-map" class="tab-page">
+                <div class="map-controls glass-card" style="margin-bottom: 1rem;">
+                    <div class="flex-between">
+                        <div>
+                            <h3 style="margin:0;"><i class="fa-solid fa-map"></i> India Risk Distribution Map</h3>
+                            <p style="color: #9ca3af; margin: 0.2rem 0 0 0; font-size: 0.88rem;">Visualizing LOW, MEDIUM, and HIGH risk tier cities across India.</p>
+                        </div>
+                        <div>
+                            <select id="map-year-select" class="custom-select" style="width: 160px;">
+                                <option value="2026" selected>Year 2026</option>
+                                <option value="2025">Year 2025</option>
+                                <option value="2020">Year 2020</option>
+                                <option value="2012">Year 2012</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="map-wrapper glass-card">
+                    <div id="gis-leaflet-map" style="height: 580px; width: 100%; border-radius: 12px;"></div>
+                </div>
+            </section>
+
+            <!-- TAB 7: MODEL SCORECARD -->
+            <section id="tab-model-scorecard" class="tab-page">
+                <div class="scorecard-grid grid-2">
+                    <div class="score-card glass-card">
+                        <div class="score-header">
+                            <div class="model-badge">AI BEST PERFORMER</div>
+                            <h3>Random Forest Classifier</h3>
+                        </div>
+                        <div class="metrics-list">
+                            <div class="m-row"><span>Accuracy</span><b>96.57%</b></div>
+                            <div class="m-row"><span>Macro F1-Score</span><b>0.9656</b></div>
+                            <div class="m-row"><span>ROC-AUC (OvR)</span><b>0.9951</b></div>
+                            <div class="m-row"><span>Class Weighting</span><b>Balanced</b></div>
+                        </div>
+                    </div>
+
+                    <div class="score-card glass-card">
+                        <div class="score-header">
+                            <div class="model-badge badge-purple">DEEP NEURAL NETWORK</div>
+                            <h3>Feed-Forward DNN</h3>
+                        </div>
+                        <div class="metrics-list">
+                            <div class="m-row"><span>Accuracy</span><b>90.65%</b></div>
+                            <div class="m-row"><span>Macro F1-Score</span><b>0.9056</b></div>
+                            <div class="m-row"><span>ROC-AUC (OvR)</span><b>0.9826</b></div>
+                            <div class="m-row"><span>Optimizer</span><b>Adam (lr=1e-3)</b></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

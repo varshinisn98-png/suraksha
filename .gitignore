@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Raw/processed data and trained models are environment-specific and can be
+# large — regenerate via the documented pipeline rather than committing them.
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/external/*
+!data/external/.gitkeep
+models/*.keras
+models/*.pkl
+outputs/figures/*
+outputs/metrics/*
+outputs/reports/*
+!outputs/**/.gitkeep
+
+.streamlit/secrets.toml

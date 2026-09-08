@@ -1,0 +1,23 @@
+# Dataset Metadata: NCRB Crimes Against Women (2001-2012)
+
+- **Dataset name:** NCRB Crimes Against Women (State/UT Series)
+- **Source organization:** National Crime Records Bureau (NCRB), Ministry of Home Affairs, Government of India
+- **Original URL:** https://www.data.gov.in/catalog/crime-against-women
+- **Republished by (if applicable):** Open Government Data (OGD) Platform India
+- **Download date:** 2026-09-08
+- **Geographic coverage:** 35 States & Union Territories of India (including Delhi UT, Chandigarh, Puducherry, etc.)
+- **Time period covered:** 2001 - 2012
+- **Columns and units:**
+  - `year`: Calendar year (2001 - 2012)
+  - `state`: State or Union Territory name
+  - `city`: Region / Metro / UT identifier
+  - `population`: Linear interpolation based on Census 2001 and Census 2011 figures
+  - `total_crimes_against_women`: Total recorded cases of crimes against women
+  - `rape`: Reported cases under IPC Sec 376
+  - `kidnapping_abduction`: Reported cases of kidnapping & abduction of women
+  - `dowry_death`: Reported cases under IPC Sec 304B
+  - `assault_on_modesty`: Reported cases of assault on modesty (IPC Sec 354)
+  - `cruelty_by_husband_relatives`: Reported cases under IPC Sec 498A
+- **Preprocessing performed on this raw file:** Reshaped wide NCRB matrix into canonical long format; populated population estimates from Census 2001 and Census 2011 statistics.
+- **License / usage terms:** Open Government Data License India (NDSAP)
+- **Known limitations:** Historical period (2001-2012). Measures official reported police cases.
