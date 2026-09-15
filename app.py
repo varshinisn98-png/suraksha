@@ -2158,20 +2158,24 @@ KARNATAKA_LOCATIONS: dict[str, tuple[float, float, str, str]] = {
     "tumakuru": (13.3412, 77.1089, "Tumakuru", "Tumakuru"),
     "tumkur": (13.3412, 77.1089, "Tumakuru", "Tumakuru"),
     "tiptur": (13.2589, 76.4789, "Tiptur, Tumakuru", "Tumakuru"),
-    "chikkamagaluru": (13.3189, 75.7754, "Chikkamagaluru", "Chikkamagaluru"),
-    "chickmagalur": (13.3189, 75.7754, "Chikkamagaluru", "Chikkamagaluru"),
-    "kadur": (13.5512, 76.0123, "Kadur, Chikkamagaluru", "Chikkamagaluru"),
-    "bagalkote": (16.1725, 75.6648, "Bagalkote", "Bagalkote"),
-    "bagalkot": (16.1725, 75.6648, "Bagalkote", "Bagalkote"),
-    "badami": (15.9189, 75.6789, "Badami, Bagalkote", "Bagalkote"),
-    "vijayapura": (16.8302, 75.7100, "Vijayapura", "Vijayapura"),
-    "bijapur": (16.8302, 75.7100, "Vijayapura", "Vijayapura"),
-    "gadag": (15.4319, 75.6355, "Gadag", "Gadag"),
-    "haveri": (14.7954, 75.3992, "Haveri", "Haveri"),
-    "ranebennur": (14.6212, 75.6212, "Ranebennur, Haveri", "Haveri"),
-    "koppal": (15.3478, 76.1548, "Koppal", "Koppal"),
-    "gangavathi": (15.4312, 76.5312, "Gangavathi, Koppal", "Koppal"),
+    "koppa chikkamagaluru": (13.5312, 75.3612, "Koppa Town, Chikkamagaluru", "Chikkamagaluru"),
+    "koppa chickmagalur": (13.5312, 75.3612, "Koppa Town, Chikkamagaluru", "Chikkamagaluru"),
+    "sringeri": (13.4189, 75.2589, "Sringeri, Chikkamagaluru", "Chikkamagaluru"),
+    "mudigere": (13.1389, 75.6389, "Mudigere, Chikkamagaluru", "Chikkamagaluru"),
+    "tarikere": (13.7112, 75.8112, "Tarikere, Chikkamagaluru", "Chikkamagaluru"),
 }
+
+
+def get_all_karnataka_suggestions() -> list[str]:
+    """Generates a sorted list of unique Karnataka location suggestions formatted as 'Place (District)'."""
+    suggestions = set()
+    for k, v in KARNATAKA_LOCATIONS.items():
+        label, dist = v[2], v[3]
+        if dist and dist not in label:
+            suggestions.add(f"{label} ({dist})")
+        else:
+            suggestions.add(label)
+    return sorted(list(suggestions))
 
 # Comprehensive 6-digit Pincode to Exact Coordinates & District Mapping for all 31 Districts of Karnataka
 PINCODE_LOCATIONS = {
@@ -2718,35 +2722,36 @@ def page_police_stations(df_police: pd.DataFrame | None):
         "Gundlupet, Chamarajanagara"
     ]
 
+    karnataka_suggestions = get_all_karnataka_suggestions()
+
     with col_in1:
+        sel_auto = st.selectbox(
+            "🔍 Live Auto-Suggest Search (Start typing any location or district...):",
+            ["-- Select or Start Typing Location (e.g. Koppa, Vijayanagar, Hassan, Srirangapatna...) --"] + karnataka_suggestions,
+            key="police_auto_suggest_selectbox"
+        )
         query_input = st.text_input(
-            "Search Location (Type Village, Taluk, District, or PIN Code):",
-            value=st.session_state.get("last_searched_place", ""),
-            placeholder="e.g. Koppa Mandya, Vijayanagar Mysuru, Hassan, 571419...",
+            "✍️ Or Type Free-Text / 6-Digit PIN Code (Optional):",
+            value="",
+            placeholder="e.g. 571419, 570017, or custom village name...",
             key="police_search_input_field"
         )
 
     with col_in2:
         station_type_filter = st.selectbox(
-            "Police Category:",
+            "Police Category Filter:",
             ["All Station Types", "🌸 All Women Police Station (AWPS) Only", "💻 Cyber Crime & Women Safety Cell Only", "🛡️ General Law & Order Only"]
         )
 
-    # Preset Location Selectbox Chips / Dropdown for quick single-click selection
-    sel_preset = st.selectbox(
-        "📍 Popular Locations:",
-        ["-- Select Location --"] + popular_places,
-        index=0,
-        key="preset_place_selector"
-    )
-
-    if sel_preset and sel_preset != "-- Select Location --":
-        active_query = sel_preset
-    else:
+    if query_input.strip():
         active_query = query_input.strip()
+    elif sel_auto and not sel_auto.startswith("--"):
+        active_query = sel_auto
+    else:
+        active_query = st.session_state.get("last_searched_place", "Hassan City (Hassan)")
 
     if not active_query:
-        st.info("💡 **Enter any location, area, landmark, or 6-digit PIN code above** (or select a location from the dropdown) to locate the nearest police station.")
+        st.info("💡 **Start typing any location in the Auto-Suggest box above** or enter a 6-digit PIN code to locate the nearest police station.")
         return
 
     st.session_state["last_searched_place"] = active_query
@@ -3145,6 +3150,8 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         unsafe_allow_html=True,
     )
 
+    karnataka_suggestions = get_all_karnataka_suggestions()
+
     # Inputs layout
     col1, col2 = st.columns(2)
 
@@ -3152,14 +3159,21 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         st.markdown("<h4 style='color: #10b981; margin-bottom: 0.3rem;'>🟢 1. Origin Location</h4>", unsafe_allow_html=True)
         origin_mode = st.radio(
             "Origin Mode:",
-            ["🔍 Search Location", "📡 Live Location"],
+            ["🔍 Live Auto-Suggest Search", "✍️ Free-Text / PIN Code Search", "📡 Live GPS Location"],
             key="origin_mode_choice"
         )
-        if origin_mode == "🔍 Search Location":
+        if origin_mode == "🔍 Live Auto-Suggest Search":
+            origin_query = st.selectbox(
+                "🟢 Start Typing Origin Location:",
+                ["Hassan City (Hassan)"] + karnataka_suggestions,
+                key="origin_auto_suggest_selectbox"
+            )
+            live_origin_coords = None
+        elif origin_mode == "✍️ Free-Text / PIN Code Search":
             origin_query = st.text_input(
-                "Origin Location:",
+                "Origin Location / PIN Code:",
                 value=st.session_state.get("safe_route_origin", "Hassan"),
-                placeholder="Type origin location...",
+                placeholder="Type location or 6-digit PIN...",
                 key="origin_search_input"
             )
             live_origin_coords = None
@@ -3175,16 +3189,29 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
 
     with col2:
         st.markdown("<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>🔴 2. Destination Location</h4>", unsafe_allow_html=True)
-        dest_query = st.text_input(
-            "Destination Location:",
-            value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
-            placeholder="Type destination location...",
-            key="dest_search_input"
+        dest_mode = st.radio(
+            "Destination Mode:",
+            ["🔍 Live Auto-Suggest Search", "✍️ Free-Text / PIN Code Search"],
+            key="dest_mode_choice"
         )
+        if dest_mode == "🔍 Live Auto-Suggest Search":
+            dest_query = st.selectbox(
+                "🔴 Start Typing Destination Location:",
+                ["Shravanabelagola Town, Hassan (Hassan)"] + karnataka_suggestions,
+                key="dest_auto_suggest_selectbox"
+            )
+        else:
+            dest_query = st.text_input(
+                "Destination Location / PIN Code:",
+                value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
+                placeholder="Type location or 6-digit PIN...",
+                key="dest_search_input"
+            )
+
         preset_route = st.selectbox(
-            "⚡ Quick Select Route:",
+            "⚡ Quick Benchmark Routes:",
             [
-                "-- Select Route --",
+                "-- Select Benchmark Route --",
                 "Hassan ➔ Shravanabelagola",
                 "Bengaluru ➔ Hassan",
                 "Mysuru ➔ Shravanabelagola",
@@ -3195,11 +3222,10 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             ],
             key="benchmark_route_picker"
         )
-        if preset_route != "-- Select Route --":
+        if preset_route != "-- Select Benchmark Route --":
             parts = preset_route.split(" ➔ ")
             origin_query = parts[0]
             dest_query = parts[1]
-            origin_mode = "🔍 Search Location"
 
     # Women's Safety Environmental Filters
     st.markdown("<br>", unsafe_allow_html=True)
