@@ -2725,7 +2725,6 @@ def page_police_stations(df_police: pd.DataFrame | None):
             placeholder="e.g. Koppa Mandya, Vijayanagar Mysuru, Hassan, 571419...",
             key="police_search_input_field"
         )
-        st.caption("💡 **Tip for duplicate names:** If multiple places share the same name (e.g. *Koppa* or *Vijayanagar*), type the district name or PIN code (e.g. `Koppa, Mandya` or `571419`) for 100% exact matching.")
 
     with col_in2:
         station_type_filter = st.selectbox(
