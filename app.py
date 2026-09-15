@@ -2722,19 +2722,12 @@ def page_police_stations(df_police: pd.DataFrame | None):
         "Gundlupet, Chamarajanagara"
     ]
 
-    karnataka_suggestions = get_all_karnataka_suggestions()
-
     with col_in1:
-        sel_auto = st.selectbox(
-            "🔍 Live Auto-Suggest Search (Start typing any location or district...):",
-            ["-- Select or Start Typing Location (e.g. Koppa, Vijayanagar, Hassan, Srirangapatna...) --"] + karnataka_suggestions,
-            key="police_auto_suggest_selectbox"
-        )
         query_input = st.text_input(
-            "✍️ Or Type Free-Text / 6-Digit PIN Code (Optional):",
-            value="",
-            placeholder="e.g. 571419, 570017, or custom village name...",
-            key="police_search_input_field"
+            "🔍 Search Location (Enter any Village, Town, Taluk, District, or 6-Digit PIN Code):",
+            value=st.session_state.get("last_searched_place", ""),
+            placeholder="Type any village, town, or 6-digit PIN code (e.g. Hirisave, Sosale, Hassan, 573201...)",
+            key="police_search_input_single"
         )
 
     with col_in2:
@@ -2743,15 +2736,10 @@ def page_police_stations(df_police: pd.DataFrame | None):
             ["All Station Types", "🌸 All Women Police Station (AWPS) Only", "💻 Cyber Crime & Women Safety Cell Only", "🛡️ General Law & Order Only"]
         )
 
-    if query_input.strip():
-        active_query = query_input.strip()
-    elif sel_auto and not sel_auto.startswith("--"):
-        active_query = sel_auto
-    else:
-        active_query = st.session_state.get("last_searched_place", "Hassan City (Hassan)")
+    active_query = query_input.strip() or st.session_state.get("last_searched_place", "Hassan")
 
     if not active_query:
-        st.info("💡 **Start typing any location in the Auto-Suggest box above** or enter a 6-digit PIN code to locate the nearest police station.")
+        st.info("💡 **Type any location, village, town, or 6-digit PIN code in the search bar above** to locate the nearest police station.")
         return
 
     st.session_state["last_searched_place"] = active_query
@@ -3157,57 +3145,22 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
 
     with col1:
         st.markdown("<h4 style='color: #10b981; margin-bottom: 0.3rem;'>🟢 1. Origin Location</h4>", unsafe_allow_html=True)
-        origin_mode = st.radio(
-            "Origin Mode:",
-            ["🔍 Live Auto-Suggest Search", "✍️ Free-Text / PIN Code Search", "📡 Live GPS Location"],
-            key="origin_mode_choice"
+        origin_query = st.text_input(
+            "Origin Location (Type Village, Town, or 6-Digit PIN Code):",
+            value=st.session_state.get("safe_route_origin", "Hassan"),
+            placeholder="e.g. Hassan, Hirisave, Sosale, 573201...",
+            key="origin_search_input_single"
         )
-        if origin_mode == "🔍 Live Auto-Suggest Search":
-            origin_query = st.selectbox(
-                "🟢 Start Typing Origin Location:",
-                ["Hassan City (Hassan)"] + karnataka_suggestions,
-                key="origin_auto_suggest_selectbox"
-            )
-            live_origin_coords = None
-        elif origin_mode == "✍️ Free-Text / PIN Code Search":
-            origin_query = st.text_input(
-                "Origin Location / PIN Code:",
-                value=st.session_state.get("safe_route_origin", "Hassan"),
-                placeholder="Type location or 6-digit PIN...",
-                key="origin_search_input"
-            )
-            live_origin_coords = None
-        else:
-            st.info("📡 Live Location Active: Enter current latitude & longitude.")
-            c_lat, c_lon = st.columns(2)
-            with c_lat:
-                user_lat_in = st.number_input("Latitude:", value=13.0068, format="%.5f", key="live_lat")
-            with c_lon:
-                user_lon_in = st.number_input("Longitude:", value=76.1038, format="%.5f", key="live_lon")
-            live_origin_coords = (user_lat_in, user_lon_in)
-            origin_query = f"Live GPS Position ({user_lat_in:.4f}, {user_lon_in:.4f})"
+        live_origin_coords = None
 
     with col2:
         st.markdown("<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>🔴 2. Destination Location</h4>", unsafe_allow_html=True)
-        dest_mode = st.radio(
-            "Destination Mode:",
-            ["🔍 Live Auto-Suggest Search", "✍️ Free-Text / PIN Code Search"],
-            key="dest_mode_choice"
+        dest_query = st.text_input(
+            "Destination Location (Type Village, Town, or 6-Digit PIN Code):",
+            value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
+            placeholder="e.g. Shravanabelagola, Mysuru, Udupi, 573135...",
+            key="dest_search_input_single"
         )
-        if dest_mode == "🔍 Live Auto-Suggest Search":
-            dest_query = st.selectbox(
-                "🔴 Start Typing Destination Location:",
-                ["Shravanabelagola Town, Hassan (Hassan)"] + karnataka_suggestions,
-                key="dest_auto_suggest_selectbox"
-            )
-        else:
-            dest_query = st.text_input(
-                "Destination Location / PIN Code:",
-                value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
-                placeholder="Type location or 6-digit PIN...",
-                key="dest_search_input"
-            )
-
         preset_route = st.selectbox(
             "⚡ Quick Benchmark Routes:",
             [
