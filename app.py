@@ -2472,18 +2472,18 @@ def resolve_karnataka_location(query: str, df_police: pd.DataFrame) -> tuple[flo
         lat, lon, label, district = KARNATAKA_LOCATIONS[q]
         return lat, lon, label, district
 
-    # 3. Substring / Token match in KARNATAKA_LOCATIONS dictionary (longest key first)
-    for k in sorted(KARNATAKA_LOCATIONS.keys(), key=len, reverse=True):
-        if len(k) >= 4 and k in q:
-            lat, lon, label, district = KARNATAKA_LOCATIONS[k]
-            return lat, lon, f"{q_raw} ({label})", district
-
-    # 4. Attempt Live OSM Geocoder for unknown villages/hoblis/panchayats
+    # 3. PRIORITY LIVE GEOCODING: Query OpenStreetMap Nominatim for any village, hobli, GP, or PO in Karnataka
     osm_res = geocode_osm_karnataka(q_raw)
     if osm_res is not None:
         lat, lon, short_addr = osm_res
         detected_dist = detect_district_from_string(short_addr) or detect_district_from_string(q_raw)
         return lat, lon, short_addr, detected_dist
+
+    # 4. Fallback: Substring / Token match in KARNATAKA_LOCATIONS dictionary (longest key first)
+    for k in sorted(KARNATAKA_LOCATIONS.keys(), key=len, reverse=True):
+        if len(k) >= 4 and k in q:
+            lat, lon, label, district = KARNATAKA_LOCATIONS[k]
+            return lat, lon, f"{q_raw} ({label})", district
 
     # 5. Match in df_police dataset area or station name
     matched = df_police[
@@ -2494,7 +2494,7 @@ def resolve_karnataka_location(query: str, df_police: pd.DataFrame) -> tuple[flo
         ref_row = matched.iloc[0]
         return float(ref_row["latitude"]), float(ref_row["longitude"]), f"{q_raw} ({ref_row['city']})", str(ref_row['city'])
 
-    # 6. Neutral Fallback: Detect if any district word was in query string, otherwise return empty district (pure distance sort)
+    # 6. Neutral Fallback
     detected_dist = detect_district_from_string(q_raw)
     return 12.9716, 77.5946, f"{q_raw} (Karnataka)", detected_dist
 
