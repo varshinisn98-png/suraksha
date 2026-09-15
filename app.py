@@ -426,9 +426,9 @@ def sidebar_nav() -> str:
         </div>
         <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.9rem; border-radius: 12px; font-size: 0.82rem; color: #fca5a5; margin-top: 0.75rem;">
             <div style="font-weight: 800; color: #ef4444; margin-bottom: 0.4rem; font-size: 0.9rem;">🚨 Women Emergency Helplines</div>
-            <div>📞 <b>1091</b> — Women Helpline</div>
-            <div>📞 <b>181</b> — Women in Distress</div>
-            <div>📞 <b>112</b> — National Emergency</div>
+            <div style="margin-bottom: 0.35rem;"><a href="tel:1091" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>1091</b> — Women Helpline (Call)</a></div>
+            <div style="margin-bottom: 0.35rem;"><a href="tel:181" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>181</b> — Women in Distress (Call)</a></div>
+            <div><a href="tel:112" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>112</b> — National Emergency (Call)</a></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -868,12 +868,12 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                 <div style="font-size: 0.85rem; color: #9ca3af;">100% In-App Safety Routing with Instant Emergency Hotline Dialing</div>
             </div>
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                <a href="tel:112" style="text-decoration: none;" target="_blank">
+                <a href="tel:112" style="text-decoration: none;">
                     <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
                         🚨 Emergency SOS (Call 112)
                     </div>
                 </a>
-                <a href="tel:1091" style="text-decoration: none;" target="_blank">
+                <a href="tel:1091" style="text-decoration: none;">
                     <div style="background: #ec4899; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
                         🌸 Women Helpline (Call 1091)
                     </div>
@@ -1134,13 +1134,13 @@ def page_home(df: pd.DataFrame | None):
         )
         sos_c1, sos_c2, sos_c3, sos_c4 = st.columns(4)
         with sos_c1:
-            st.error("📞 **112** (Emergency)")
+            st.markdown('<a href="tel:112" style="text-decoration: none;"><div style="background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fca5a5;">📞 Call 112 (Emergency)</div></a>', unsafe_allow_html=True)
         with sos_c2:
-            st.warning("👩 **1091** (Women)")
+            st.markdown('<a href="tel:1091" style="text-decoration: none;"><div style="background: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fbcfe8;">🌸 Call 1091 (Women)</div></a>', unsafe_allow_html=True)
         with sos_c3:
-            st.info("💻 **1930** (Cyber)")
+            st.markdown('<a href="tel:1930" style="text-decoration: none;"><div style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #bfdbfe;">💻 Call 1930 (Cyber)</div></a>', unsafe_allow_html=True)
         with sos_c4:
-            st.success("👧 **1098** (Child)")
+            st.markdown('<a href="tel:1098" style="text-decoration: none;"><div style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #a7f3d0;">👧 Call 1098 (Child)</div></a>', unsafe_allow_html=True)
         
         if st.button("📡 Broadcast Live SOS Alert", key="broadcast_sos_btn"):
             st.toast("🚨 Live SOS Alert Broadcasted!", icon="🚨")
@@ -1388,40 +1388,48 @@ def page_home(df: pd.DataFrame | None):
     with h1:
         st.markdown(
             """
-            <div class="glass-card" style="text-align: center; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); padding: 0.8rem;">
-                <div style="font-size: 1.4rem; font-weight: 800; color: #ef4444; font-family: 'Outfit';">📞 112</div>
-                <div style="font-size: 0.78rem; color: #fca5a5;">National Emergency</div>
-            </div>
+            <a href="tel:112" style="text-decoration: none;">
+                <div class="glass-card" style="text-align: center; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); padding: 0.8rem; cursor: pointer;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #ef4444; font-family: 'Outfit';">📞 112</div>
+                    <div style="font-size: 0.78rem; color: #fca5a5;">National Emergency (Call)</div>
+                </div>
+            </a>
             """,
             unsafe_allow_html=True,
         )
     with h2:
         st.markdown(
             """
-            <div class="glass-card" style="text-align: center; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.08); padding: 0.8rem;">
-                <div style="font-size: 1.4rem; font-weight: 800; color: #a855f7; font-family: 'Outfit';">👩 1091</div>
-                <div style="font-size: 0.78rem; color: #e9d5ff;">Women Helpline</div>
-            </div>
+            <a href="tel:1091" style="text-decoration: none;">
+                <div class="glass-card" style="text-align: center; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.08); padding: 0.8rem; cursor: pointer;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #a855f7; font-family: 'Outfit';">👩 1091</div>
+                    <div style="font-size: 0.78rem; color: #e9d5ff;">Women Helpline (Call)</div>
+                </div>
+            </a>
             """,
             unsafe_allow_html=True,
         )
     with h3:
         st.markdown(
             """
-            <div class="glass-card" style="text-align: center; border: 1px solid rgba(6, 182, 212, 0.35); background: rgba(6, 182, 212, 0.08); padding: 0.8rem;">
-                <div style="font-size: 1.4rem; font-weight: 800; color: #06b6d4; font-family: 'Outfit';">💻 1930</div>
-                <div style="font-size: 0.78rem; color: #cffaff;">Cyber Crime Helpline</div>
-            </div>
+            <a href="tel:1930" style="text-decoration: none;">
+                <div class="glass-card" style="text-align: center; border: 1px solid rgba(6, 182, 212, 0.35); background: rgba(6, 182, 212, 0.08); padding: 0.8rem; cursor: pointer;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #06b6d4; font-family: 'Outfit';">💻 1930</div>
+                    <div style="font-size: 0.78rem; color: #cffaff;">Cyber Crime Helpline (Call)</div>
+                </div>
+            </a>
             """,
             unsafe_allow_html=True,
         )
     with h4:
         st.markdown(
             """
-            <div class="glass-card" style="text-align: center; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); padding: 0.8rem;">
-                <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; font-family: 'Outfit';">👧 1098</div>
-                <div style="font-size: 0.78rem; color: #a7f3d0;">Childline India</div>
-            </div>
+            <a href="tel:1098" style="text-decoration: none;">
+                <div class="glass-card" style="text-align: center; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); padding: 0.8rem; cursor: pointer;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; font-family: 'Outfit';">👧 1098</div>
+                    <div style="font-size: 0.78rem; color: #a7f3d0;">Childline India (Call)</div>
+                </div>
+            </a>
             """,
             unsafe_allow_html=True,
         )
@@ -2824,12 +2832,12 @@ def page_police_stations(df_police: pd.DataFrame | None):
 </div>
 </div>
 <div style="margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center;">
-<a href="tel:{phone_clean}" style="text-decoration: none;" target="_blank">
+<a href="tel:{phone_clean}" style="text-decoration: none;">
 <div style="background: #2563eb; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem;">
 📞 Call Station ({st_row['phone']})
 </div>
 </a>
-<a href="tel:112" style="text-decoration: none;" target="_blank">
+<a href="tel:112" style="text-decoration: none;">
 <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem;">
 🚨 Call Emergency 112
 </div>
@@ -3456,7 +3464,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                 <div style="font-size: 0.85rem; color: #9ca3af;">Instant Emergency Dialing & Google Maps Live Turn-by-Turn Navigation Redirects</div>
             </div>
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                <a href="tel:112" style="text-decoration: none;" target="_blank">
+                <a href="tel:112" style="text-decoration: none;">
                     <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
                         🚨 Emergency SOS (Call 112)
                     </div>
