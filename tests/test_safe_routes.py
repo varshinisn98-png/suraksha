@@ -25,6 +25,8 @@ def test_osrm_routing_and_safety_scores():
     assert "distance" in r1
     assert r1["distance"] > 1000  # at least 1km
 
-    score1, cnt1, _ = calculate_route_safety_score(r1, df_police)
+    score1, cnt1, _, light1, crowd1 = calculate_route_safety_score(r1, df_police)
     assert 0 <= score1 <= 100
     assert cnt1 >= 0
+    assert 0 <= light1 <= 100
+    assert 0 <= crowd1 <= 100
