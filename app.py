@@ -385,8 +385,8 @@ def render_missing_dataset_message():
 
 def render_voice_sos_widget():
     """
-    Renders a Hands-Free Voice-Activated SOS Audio Trigger Component.
-    Uses Web Speech API & Web Audio API synthesizer for 100% client-side emergency detection.
+    Renders a Hands-Free Voice & High-Decibel Noise SOS Trigger Component.
+    Uses Web Audio API MediaDevices volume analyzer + Web Speech API for 100% browser compatibility (Brave, Chrome, Edge, Safari).
     """
     html_code = """
     <!DOCTYPE html>
@@ -468,22 +468,52 @@ def render_voice_sos_widget():
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
+        .btn-siren {
+            width: 100%;
+            margin-top: 0.4rem;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 0.45rem 0.6rem;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 0.76rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+        .btn-siren:hover {
+            background: rgba(239, 68, 68, 0.35);
+        }
         .status-text {
             font-size: 0.76rem;
             color: #d1d5db;
             margin-top: 0.5rem;
             line-height: 1.35;
         }
-        .transcript-box {
-            font-size: 0.72rem;
-            color: #10b981;
-            margin-top: 0.4rem;
-            background: rgba(0,0,0,0.4);
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            min-height: 24px;
-            word-break: break-word;
+        .meter-container {
+            display: none;
+            margin-top: 0.5rem;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 0.5rem;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .meter-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.3rem;
+        }
+        .meter-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 60%, #ef4444 100%);
+            transition: width 0.1s ease;
         }
         .keywords-tag {
             font-size: 0.7rem;
@@ -516,7 +546,7 @@ def render_voice_sos_widget():
     <div class="voice-card">
         <div class="title-row">
             <div class="title">
-                🎙️ HANDS-FREE VOICE SOS
+                🎙️ HANDS-FREE VOICE & NOISE SOS
             </div>
             <div id="pulseDot" class="pulse-dot"></div>
         </div>
@@ -525,16 +555,26 @@ def render_voice_sos_widget():
             <span>🎙️ Enable Hands-Free Voice SOS</span>
         </button>
 
+        <button class="btn-siren" onclick="triggerTestSiren()">
+            <span>🚨 Test Alarm Siren & 112 Trigger</span>
+        </button>
+
         <div id="statusText" class="status-text">
-            Click button above to enable mic. Say <b>"Help Me"</b> or <b>"Emergency"</b> for auto 112 call.
+            Click button above to enable mic. Say <b>"Help Me"</b> or <b>shout</b> for auto 112 call.
         </div>
 
-        <div id="transcriptBox" class="transcript-box" style="display: none;">
-            🎧 <i>Listening for speech...</i>
+        <div id="meterContainer" class="meter-container">
+            <div style="font-size: 0.72rem; color: #34d399; display: flex; justify-content: space-between;">
+                <span id="meterLabel">🎤 Mic Level: 0%</span>
+                <span id="speechState">🎧 Listening...</span>
+            </div>
+            <div class="meter-bar-bg">
+                <div id="meterFill" class="meter-bar-fill"></div>
+            </div>
         </div>
 
         <div class="keywords-tag">
-            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Save me", "SOS", "Police"
+            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Save me", "SOS", "Police" or Shouting
         </div>
 
         <div id="alertBox" class="alert-box">
@@ -544,28 +584,31 @@ def render_voice_sos_widget():
 
     <script>
         let isListening = false;
-        let recognition = null;
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let audioStream = null;
+        let audioCtx = null;
+        let analyser = null;
+        let animFrame = null;
+        let speechRec = null;
 
         function playEmergencySiren() {
             try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
                 osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(850, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1350, audioCtx.currentTime + 0.35);
-                osc.frequency.exponentialRampToValueAtTime(750, audioCtx.currentTime + 0.7);
+                osc.frequency.setValueAtTime(850, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1400, ctx.currentTime + 0.35);
+                osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.7);
                 osc.connect(gain);
-                gain.connect(audioCtx.destination);
+                gain.connect(ctx.destination);
                 osc.start();
                 setTimeout(() => { osc.stop(); }, 3500);
             } catch(e) { console.error("Audio Context Error:", e); }
         }
 
-        function triggerEmergencyAlert(keyword) {
+        function triggerEmergencyAlert(source) {
             document.getElementById("alertBox").style.display = "block";
-            document.getElementById("alertBox").innerHTML = "🚨 VOICE TRIGGER DETECTED: '" + keyword.toUpperCase() + "'!<br>CALLING 112 & PLAYING SIREN!";
+            document.getElementById("alertBox").innerHTML = "🚨 EMERGENCY TRIGGER: '" + source.toUpperCase() + "'!<br>CALLING 112 & PLAYING SIREN!";
             playEmergencySiren();
 
             setTimeout(() => {
@@ -573,103 +616,111 @@ def render_voice_sos_widget():
             }, 800);
         }
 
-        function toggleVoiceSOS() {
-            if (!SpeechRecognition) {
-                alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
-                return;
-            }
+        function triggerTestSiren() {
+            triggerEmergencyAlert("TEST ALARM BUTTON");
+        }
 
+        async function toggleVoiceSOS() {
             const btn = document.getElementById("toggleBtn");
             const dot = document.getElementById("pulseDot");
             const status = document.getElementById("statusText");
-            const tBox = document.getElementById("transcriptBox");
+            const meterC = document.getElementById("meterContainer");
+            const meterFill = document.getElementById("meterFill");
+            const meterLabel = document.getElementById("meterLabel");
+            const speechState = document.getElementById("speechState");
 
             if (!isListening) {
                 try {
-                    recognition = new SpeechRecognition();
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-                    recognition.maxAlternatives = 1;
+                    // Access microphone stream directly via MediaDevices (works on all browsers including Brave)
+                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 256;
+                    const source = audioCtx.createMediaStreamSource(audioStream);
+                    source.connect(analyser);
 
-                    recognition.onstart = function() {
-                        isListening = true;
-                        btn.classList.add("active-bg");
-                        btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
-                        dot.classList.add("active");
-                        status.innerHTML = "🎙️ <b>Listening active...</b> Speak clearly near mic.";
-                        tBox.style.display = "block";
-                        tBox.innerHTML = "🎧 <i>Listening for speech...</i>";
-                    };
+                    isListening = true;
+                    btn.classList.add("active-bg");
+                    btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
+                    dot.classList.add("active");
+                    status.innerHTML = "🎙️ <b>Mic Active!</b> Speak or shout <i>'Help Me'</i> / <i>'Emergency'</i>.";
+                    meterC.style.display = "block";
 
-                    recognition.onsoundstart = function() {
-                        tBox.innerHTML = "🔊 <i>Sound detected... Processing speech...</i>";
-                    };
+                    // Audio Volume Level Loop
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    function checkVolume() {
+                        if (!isListening) return;
+                        analyser.getByteFrequencyData(dataArray);
+                        let sum = 0;
+                        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                        let avg = sum / dataArray.length;
+                        let volumePercent = Math.min(100, Math.round((avg / 128) * 100));
 
-                    recognition.onspeechstart = function() {
-                        tBox.innerHTML = "🗣️ <i>Speech detected... Listening...</i>";
-                    };
+                        meterFill.style.width = volumePercent + "%";
+                        meterLabel.innerText = "🎤 Mic Level: " + volumePercent + "%";
 
-                    recognition.onresult = function(event) {
-                        let finalTranscript = '';
-                        let interimTranscript = '';
-                        for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            if (event.results[i].isFinal) {
-                                finalTranscript += event.results[i][0].transcript;
-                            } else {
-                                interimTranscript += event.results[i][0].transcript;
-                            }
-                        }
-                        let fullText = (finalTranscript + ' ' + interimTranscript).toLowerCase().trim();
-                        if (fullText.length > 0) {
-                            tBox.innerHTML = "🗣️ " + fullText;
-                        }
-
-                        const keywords = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save"];
-                        for (let kw of keywords) {
-                            if (fullText.includes(kw)) {
-                                triggerEmergencyAlert(kw);
-                                break;
-                            }
-                        }
-                    };
-
-                    recognition.onerror = function(err) {
-                        console.error("Speech Error:", err.error);
-                        if (err.error === "no-speech") {
-                            tBox.innerHTML = "🎧 <i>Listening... Speak 'Help Me' or 'Emergency'</i>";
-                        } else if (err.error === "not-allowed") {
-                            status.innerHTML = "⚠️ Microphone access denied. Click mic icon in browser URL bar to allow.";
+                        if (volumePercent > 10) {
+                            speechState.innerText = "🗣️ Voice Detected!";
                         } else {
-                            tBox.innerHTML = "🎧 <i>Listening for speech...</i>";
+                            speechState.innerText = "🎧 Listening...";
                         }
-                    };
 
-                    recognition.onend = function() {
-                        if (isListening) {
-                            try { recognition.start(); } catch(e){}
+                        // Loud Shout / Scream Emergency Trigger Threshold (>78% volume)
+                        if (volumePercent > 78) {
+                            triggerEmergencyAlert("LOUD SHOUT / SCREAM DETECTED");
+                            return;
                         }
-                    };
 
-                    recognition.start();
-                } catch(e) {
-                    console.error("Initialization Error:", e);
-                    status.innerHTML = "⚠️ Speech error: " + e.message;
+                        animFrame = requestAnimationFrame(checkVolume);
+                    }
+                    checkVolume();
+
+                    // Optional Speech Recognition Engine
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    if (SpeechRecognition) {
+                        speechRec = new SpeechRecognition();
+                        speechRec.continuous = true;
+                        speechRec.interimResults = true;
+                        speechRec.onresult = function(event) {
+                            let text = "";
+                            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                                text += event.results[i][0].transcript.toLowerCase();
+                            }
+                            if (text.length > 0) speechState.innerText = "🗣️ " + text;
+                            const kw = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao"];
+                            for (let k of kw) {
+                                if (text.includes(k)) {
+                                    triggerEmergencyAlert(k);
+                                    break;
+                                }
+                            }
+                        };
+                        try { speechRec.start(); } catch(e){}
+                    }
+
+                } catch (err) {
+                    console.error("Mic Access Error:", err);
+                    status.innerHTML = "⚠️ Microphone access denied. Click mic icon in browser URL bar & allow mic.";
                 }
             } else {
                 isListening = false;
-                if (recognition) recognition.stop();
+                if (audioStream) audioStream.getTracks().forEach(track => track.stop());
+                if (audioCtx) audioCtx.close();
+                if (animFrame) cancelAnimationFrame(animFrame);
+                if (speechRec) try { speechRec.stop(); } catch(e){}
+
                 btn.classList.remove("active-bg");
                 btn.innerHTML = "<span>🎙️ Enable Hands-Free Voice SOS</span>";
                 dot.classList.remove("active");
-                tBox.style.display = "none";
-                status.innerHTML = "Click button above to enable mic. Say <b>'Help Me'</b> or <b>'Emergency'</b> for auto 112 call.";
+                meterC.style.display = "none";
+                status.innerHTML = "Click button above to enable mic. Say <b>'Help Me'</b> or <b>shout</b> for auto 112 call.";
             }
         }
     </script>
     </body>
     </html>
     """
-    components.html(html_code, height=220, scrolling=False)
+    components.html(html_code, height=230, scrolling=False)
 
 
 def sidebar_nav() -> str:
