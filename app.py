@@ -29,6 +29,23 @@ st.set_page_config(
 # Ultra-Premium Modern Glassmorphism CSS & Styling
 # --------------------------------------------------------------------------
 CUSTOM_CSS = """
+<script>
+    (function enableIframeMicPermissions() {
+        function patchIframes() {
+            try {
+                var iframes = document.querySelectorAll('iframe');
+                iframes.forEach(function(f) {
+                    var cur = f.getAttribute('allow') || '';
+                    if (!cur.includes('microphone')) {
+                        f.setAttribute('allow', cur + '; microphone *; speech-recognition *; autoplay *;');
+                    }
+                });
+            } catch(e) {}
+        }
+        patchIframes();
+        setInterval(patchIframes, 1000);
+    })();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -631,8 +648,23 @@ def render_voice_sos_widget():
 
             if (!isListening) {
                 try {
-                    // Access microphone stream directly via MediaDevices (works on all browsers including Brave)
-                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    // Multi-level parent window fallback for iframe permission bypass
+                    let getUserMediaFn = null;
+                    if (window.parent && window.parent.navigator && window.parent.navigator.mediaDevices && window.parent.navigator.mediaDevices.getUserMedia) {
+                        getUserMediaFn = (c) => window.parent.navigator.mediaDevices.getUserMedia(c);
+                    } else if (navigator && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        getUserMediaFn = (c) => navigator.mediaDevices.getUserMedia(c);
+                    } else if (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
+                        const legacy = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia).bind(navigator);
+                        getUserMediaFn = (c) => new Promise((res, rej) => legacy(c, res, rej));
+                    }
+
+                    if (!getUserMediaFn) {
+                        status.innerHTML = "⚠️ Microphone API not available. Please allow mic in browser URL bar.";
+                        return;
+                    }
+
+                    audioStream = await getUserMediaFn({ audio: true });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioCtx.createAnalyser();
                     analyser.fftSize = 256;
@@ -675,10 +707,10 @@ def render_voice_sos_widget():
                     }
                     checkVolume();
 
-                    // Optional Speech Recognition Engine
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    if (SpeechRecognition) {
-                        speechRec = new SpeechRecognition();
+                    // Speech Recognition Engine
+                    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || (window.parent && (window.parent.SpeechRecognition || window.parent.webkitSpeechRecognition));
+                    if (SpeechRec) {
+                        speechRec = new SpeechRec();
                         speechRec.continuous = true;
                         speechRec.interimResults = true;
                         speechRec.onresult = function(event) {
@@ -700,7 +732,7 @@ def render_voice_sos_widget():
 
                 } catch (err) {
                     console.error("Mic Access Error:", err);
-                    status.innerHTML = "⚠️ Microphone access denied. Click mic icon in browser URL bar & allow mic.";
+                    status.innerHTML = "⚠️ Mic Access Blocked (" + (err.name || err.message) + "). Click lock/mic icon in browser URL bar to Allow.";
                 }
             } else {
                 isListening = false;
