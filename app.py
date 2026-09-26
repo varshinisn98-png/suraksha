@@ -415,19 +415,6 @@ def render_voice_sos_widget():
     )
 
     sos_active = st.sidebar.toggle("🎙️ Enable Hands-Free Voice SOS", key="voice_sos_active_toggle")
-    test_siren_clicked = st.sidebar.button("🚨 Test Alarm Siren & 112 Trigger", use_container_width=True, key="btn_test_siren")
-
-    if test_siren_clicked:
-        st.sidebar.error("🚨 **TEST ALARM TRIGGERED! DIALING 112 & PLAYING SIREN!**")
-        st.sidebar.markdown(
-            """
-            <div style="background: #dc2626; color: white; padding: 0.6rem; border-radius: 8px; text-align: center; font-weight: 800; margin-bottom: 0.6rem;">
-                🚨 ALARM SIREN PLAYING!<br>
-                <a href="tel:112" target="_self" style="color: #ffffff; text-decoration: underline;">📞 Click here to Call 112 Emergency</a>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
     if sos_active:
         # Render the auto-starting listening engine HTML component
