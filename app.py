@@ -680,14 +680,7 @@ def sidebar_nav() -> str:
     st.sidebar.divider()
     st.sidebar.markdown(
         """
-        <div style="background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255,255,255,0.08); padding: 0.9rem; border-radius: 12px; font-size: 0.82rem; color: #9ca3af;">
-            <div style="font-weight: 700; color: #e5e7eb; margin-bottom: 0.3rem;">📊 Coverage Summary</div>
-            <div>• Timeline: <b>2001 – 2026</b></div>
-            <div>• Coverage: <b>182 Cities & Districts</b></div>
-            <div>• Scope: <b>35 States & UTs</b></div>
-            <div>• Model Accuracy: <b>96.57%</b></div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.9rem; border-radius: 12px; font-size: 0.82rem; color: #fca5a5; margin-top: 0.75rem;">
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.9rem; border-radius: 12px; font-size: 0.82rem; color: #fca5a5;">
             <div style="font-weight: 800; color: #ef4444; margin-bottom: 0.4rem; font-size: 0.9rem;">🚨 Women Emergency Helplines</div>
             <div style="margin-bottom: 0.35rem;"><a href="tel:1091" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>1091</b> — Women Helpline (Call)</a></div>
             <div style="margin-bottom: 0.35rem;"><a href="tel:181" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>181</b> — Women in Distress (Call)</a></div>
