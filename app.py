@@ -1142,6 +1142,27 @@ def page_home(df: pd.DataFrame | None):
         with sos_c4:
             st.markdown('<a href="tel:1098" style="text-decoration: none;"><div style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #a7f3d0;">👧 Call 1098 (Child)</div></a>', unsafe_allow_html=True)
         
+        loc_active = st.session_state.get("safe_route_origin") or st.session_state.get("last_searched_place") or "Current Location"
+        top_sos_msg = (
+            f"🚨 EMERGENCY SOS ALERT (Suraksha AI)\n"
+            f"I require immediate safety monitoring near '{loc_active}'.\n"
+            f"📍 Track Location: https://maps.google.com/?q=12.9716,77.5946\n"
+            f"📞 Women Helpline: 1091 | Emergency: 112"
+        )
+        encoded_top_sos = urllib.parse.quote(top_sos_msg)
+        st.markdown(
+            f"""
+            <div style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
+                <a href="https://api.whatsapp.com/send?text={encoded_top_sos}" target="_blank" style="text-decoration: none;">
+                    <div style="background: #25d366; color: #ffffff; padding: 0.75rem 1.2rem; border-radius: 10px; font-weight: 800; text-align: center; display: block; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);">
+                        📲 Share Live SOS Location & Route Pin via WhatsApp
+                    </div>
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
         if st.button("📡 Broadcast Live SOS Alert", key="broadcast_sos_btn"):
             st.toast("🚨 Live SOS Alert Broadcasted!", icon="🚨")
             st.success("✅ **SOS Alert Activated!** Live GPS coordinates broadcast sent.")
@@ -3351,10 +3372,13 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
     # Women's SOS Emergency Location Broadcast Generator
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("🚨 GENERATE & BROADCAST EMERGENCY SOS LOCATION MESSAGE (1-Click Emergency Share)", expanded=False):
+        live_location_pin = f"https://maps.google.com/?q={orig_lat:.5f},{orig_lon:.5f}"
+        live_route_map = f"https://www.google.com/maps/dir/?api=1&origin={orig_lat:.5f},{orig_lon:.5f}&destination={dest_lat:.5f},{dest_lon:.5f}&travelmode=driving"
         sos_msg = (
             f"🚨 EMERGENCY SOS BROADCAST (Suraksha AI)\n"
             f"I am traveling from '{origin_query}' to '{dest_query}'.\n"
-            f"📍 Live Coordinates: ({orig_lat:.4f}, {orig_lon:.4f})\n"
+            f"📍 Live Location Pin: {live_location_pin}\n"
+            f"🗺️ Live Navigation Route: {live_route_map}\n"
             f"🛡️ Recommended Safe Route Safety Index: {safe_score}/100 ({safe_light}% Street Lighting)\n"
             f"📞 Women Helpline: 1091 | National Emergency: 112"
         )
