@@ -559,7 +559,7 @@ def render_voice_sos_widget():
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
-                setTimeout(() => { osc.stop(); }, 3000);
+                setTimeout(() => { osc.stop(); }, 3500);
             } catch(e) { console.error("Audio Context Error:", e); }
         }
 
@@ -585,49 +585,76 @@ def render_voice_sos_widget():
             const tBox = document.getElementById("transcriptBox");
 
             if (!isListening) {
-                recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = 'en-US';
+                try {
+                    recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.maxAlternatives = 1;
 
-                recognition.onstart = function() {
-                    isListening = true;
-                    btn.classList.add("active-bg");
-                    btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
-                    dot.classList.add("active");
-                    status.innerHTML = "🎙️ <b>Listening active...</b> Speak clearly near microphone.";
-                    tBox.style.display = "block";
-                    tBox.innerHTML = "🎧 <i>Listening for triggers...</i>";
-                };
+                    recognition.onstart = function() {
+                        isListening = true;
+                        btn.classList.add("active-bg");
+                        btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
+                        dot.classList.add("active");
+                        status.innerHTML = "🎙️ <b>Listening active...</b> Speak clearly near mic.";
+                        tBox.style.display = "block";
+                        tBox.innerHTML = "🎧 <i>Listening for speech...</i>";
+                    };
 
-                recognition.onresult = function(event) {
-                    let transcript = "";
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        transcript += event.results[i][0].transcript.toLowerCase();
-                    }
-                    tBox.innerHTML = "🗣️ " + transcript;
+                    recognition.onsoundstart = function() {
+                        tBox.innerHTML = "🔊 <i>Sound detected... Processing speech...</i>";
+                    };
 
-                    const keywords = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112"];
-                    for (let kw of keywords) {
-                        if (transcript.includes(kw)) {
-                            triggerEmergencyAlert(kw);
-                            break;
+                    recognition.onspeechstart = function() {
+                        tBox.innerHTML = "🗣️ <i>Speech detected... Listening...</i>";
+                    };
+
+                    recognition.onresult = function(event) {
+                        let finalTranscript = '';
+                        let interimTranscript = '';
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            } else {
+                                interimTranscript += event.results[i][0].transcript;
+                            }
                         }
-                    }
-                };
+                        let fullText = (finalTranscript + ' ' + interimTranscript).toLowerCase().trim();
+                        if (fullText.length > 0) {
+                            tBox.innerHTML = "🗣️ " + fullText;
+                        }
 
-                recognition.onerror = function(err) {
-                    console.error("Speech Error:", err);
-                    status.innerHTML = "⚠️ Mic permission required or speech error. Click to retry.";
-                };
+                        const keywords = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save"];
+                        for (let kw of keywords) {
+                            if (fullText.includes(kw)) {
+                                triggerEmergencyAlert(kw);
+                                break;
+                            }
+                        }
+                    };
 
-                recognition.onend = function() {
-                    if (isListening) {
-                        try { recognition.start(); } catch(e){}
-                    }
-                };
+                    recognition.onerror = function(err) {
+                        console.error("Speech Error:", err.error);
+                        if (err.error === "no-speech") {
+                            tBox.innerHTML = "🎧 <i>Listening... Speak 'Help Me' or 'Emergency'</i>";
+                        } else if (err.error === "not-allowed") {
+                            status.innerHTML = "⚠️ Microphone access denied. Click mic icon in browser URL bar to allow.";
+                        } else {
+                            tBox.innerHTML = "🎧 <i>Listening for speech...</i>";
+                        }
+                    };
 
-                recognition.start();
+                    recognition.onend = function() {
+                        if (isListening) {
+                            try { recognition.start(); } catch(e){}
+                        }
+                    };
+
+                    recognition.start();
+                } catch(e) {
+                    console.error("Initialization Error:", e);
+                    status.innerHTML = "⚠️ Speech error: " + e.message;
+                }
             } else {
                 isListening = false;
                 if (recognition) recognition.stop();
