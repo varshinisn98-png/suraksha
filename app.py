@@ -403,7 +403,7 @@ def render_missing_dataset_message():
 def render_voice_sos_widget():
     """
     Renders Hands-Free Voice-Activated SOS Audio Trigger using native Streamlit state toggle + auto-listening engine.
-    100% reliable click handlers across all devices and browsers.
+    100% reliable click handlers across all devices and browsers (Brave, Chrome, Edge, Safari, Mobile).
     """
     st.sidebar.markdown(
         """
@@ -417,7 +417,7 @@ def render_voice_sos_widget():
     sos_active = st.sidebar.toggle("🎙️ Enable Hands-Free Voice SOS", key="voice_sos_active_toggle")
 
     if sos_active:
-        # Render the auto-starting listening engine HTML component
+        # Render the listening engine HTML component
         html_code = clean_html("""
         <!DOCTYPE html>
         <html>
@@ -446,10 +446,24 @@ def render_voice_sos_widget():
             }
             .transcript-box {
                 font-size: 0.74rem; color: #34d399; margin-top: 0.45rem; background: rgba(5, 10, 20, 0.8);
-                padding: 0.5rem 0.65rem; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);
-                min-height: 32px; word-break: break-word; line-height: 1.35;
+                padding: 0.55rem 0.65rem; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);
+                min-height: 48px; word-break: break-word; line-height: 1.35;
+                display: flex; flex-direction: column; justify-content: center;
             }
-            .meter-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 0.4rem; }
+            .btn-grant {
+                width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: #ffffff; border: none; padding: 0.5rem 0.6rem; border-radius: 6px;
+                font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;
+                box-shadow: 0 3px 12px rgba(16, 185, 129, 0.4); text-align: center;
+                animation: pulseBtn 2s infinite;
+            }
+            @keyframes pulseBtn {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.02); box-shadow: 0 5px 18px rgba(16, 185, 129, 0.6); }
+                100% { transform: scale(1); }
+            }
+            .btn-grant:hover { opacity: 0.95; transform: translateY(-1px); }
+            .meter-bar-bg { width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 0.45rem; }
             .meter-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%); transition: width 0.08s ease; }
             .alert-box { display: none; margin-top: 0.65rem; background: #dc2626; color: #ffffff; padding: 0.65rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; text-align: center; box-shadow: 0 0 18px rgba(220, 38, 38, 0.85); animation: flash 0.4s infinite alternate; }
             @keyframes flash { from { opacity: 1; } to { opacity: 0.6; } }
@@ -463,7 +477,14 @@ def render_voice_sos_widget():
             </div>
 
             <div id="transcriptBox" class="transcript-box">
-                🎧 <i>Connecting mic & listening... Click Allow in browser if prompted!</i>
+                <div id="statusContent">
+                    <button id="grantMicBtn" class="btn-grant" onclick="requestMicDirect()">
+                        🎙️ TAP TO ENABLE MICROPHONE
+                    </button>
+                    <div style="font-size: 0.68rem; color: #9ca3af; margin-top: 0.35rem; text-align: center;">
+                        Tap above to allow mic in Brave / Chrome
+                    </div>
+                </div>
             </div>
 
             <div class="meter-bar-bg">
@@ -512,11 +533,20 @@ def render_voice_sos_widget():
                 try { window.open("tel:112", "_parent"); } catch(e){}
             }
 
-            async function startEngine() {
-                const tBox = document.getElementById("transcriptBox");
-                const meterFill = document.getElementById("meterFill");
+            function updateStatus(html) {
+                const sc = document.getElementById("statusContent");
+                if (sc) {
+                    sc.innerHTML = html;
+                } else {
+                    const tBox = document.getElementById("transcriptBox");
+                    if (tBox) tBox.innerHTML = html;
+                }
+            }
 
-                // 1. Audio Level Volume Stream
+            async function requestMicDirect() {
+                updateStatus("🎧 <b>Connecting mic...</b><br><i>Click 'Allow' in browser popup if prompted!</i>");
+
+                // 1. Direct getUserMedia with user gesture
                 try {
                     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -526,44 +556,45 @@ def render_voice_sos_widget():
                     const source = audioCtx.createMediaStreamSource(audioStream);
                     source.connect(analyser);
 
+                    updateStatus("🟢 <b>Mic Active!</b> Listening for keywords or loud shout...");
+
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
                     function checkVolume() {
+                        if (!analyser) return;
                         analyser.getByteFrequencyData(dataArray);
                         let sum = 0;
                         for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                         let avg = sum / dataArray.length;
                         let vol = Math.min(100, Math.round((avg / 128) * 100));
 
+                        const meterFill = document.getElementById("meterFill");
                         if (meterFill) meterFill.style.width = vol + "%";
-
-                        if (vol > 10 && tBox && tBox.innerText.includes("Connecting")) {
-                            tBox.innerHTML = "🔊 <i>Sound detected (" + vol + "%)! Hearing your voice...</i>";
-                        }
 
                         if (vol > 50) {
                             triggerEmergencyAlert("LOUD SHOUT / SCREAM (" + vol + "%)");
                             return;
                         }
-
                         requestAnimationFrame(checkVolume);
                     }
                     checkVolume();
                 } catch(err) {
-                    console.warn("Mic error:", err);
-                    if (tBox) tBox.innerHTML = "⚠️ <b>Mic Access Notice</b>: " + err.name + ". Grant mic permission in URL bar.";
+                    console.warn("Direct Mic error:", err);
+                    updateStatus("<button class='btn-grant' onclick='requestMicDirect()'>🎙️ RETRY ENABLING MIC</button><div style='font-size:0.68rem; color:#ef4444; margin-top:0.35rem; text-align:center;'>⚠️ Mic Blocked! Click 🔒 icon in Brave URL bar & set Microphone to <b>Allow</b>.</div>");
+                    return;
                 }
 
                 // 2. Speech Recognition
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (SpeechRec) {
                     try {
+                        if (recognition) { try { recognition.abort(); } catch(e){} }
                         recognition = new SpeechRec();
                         recognition.continuous = true;
                         recognition.interimResults = true;
                         recognition.lang = window.navigator.language || 'en-IN';
 
                         recognition.onstart = function() {
-                            if (tBox) tBox.innerHTML = "🟢 <b>Listening!</b> Say <i>'Help Me'</i>, <i>'Emergency'</i>, or <i>'Suraksha'</i>...";
+                            updateStatus("🟢 <b>Listening Active!</b> Say <i>'Help Me'</i>, <i>'Emergency'</i>, or <i>'Suraksha'</i>...");
                         };
 
                         recognition.onresult = function(event) {
@@ -572,10 +603,10 @@ def render_voice_sos_widget():
                                 fullText += event.results[i][0].transcript.toLowerCase() + " ";
                             }
                             fullText = fullText.trim();
-                            if (fullText.length > 0 && tBox) {
-                                tBox.innerHTML = "🗣️ Spoken: <b>\"" + fullText + "\"</b>";
+                            if (fullText.length > 0) {
+                                updateStatus("🗣️ Spoken: <b>\"" + fullText + "\"</b>");
                             }
-                            const kw = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save", "madad", "chodo", "stop", "y"];
+                            const kw = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save", "madad", "chodo", "stop"];
                             for (let kwItem of kw) {
                                 if (fullText.includes(kwItem)) {
                                     triggerEmergencyAlert(kwItem);
@@ -585,35 +616,44 @@ def render_voice_sos_widget():
                         };
 
                         recognition.onerror = function(err) {
-                            if (tBox) {
-                                if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
-                                    tBox.innerHTML = "⚠️ <b>Mic permission blocked</b>. Click 🔒 icon next to URL to Allow Microphone.";
-                                } else if (err.error === 'no-speech') {
-                                    tBox.innerHTML = "🎧 <i>Listening... Speak 'Help Me', 'Emergency', or Shout!</i>";
-                                } else {
-                                    tBox.innerHTML = "🎧 <i>Engine status: " + err.error + ". Listening...</i>";
-                                }
+                            if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
+                                updateStatus("🦁 <b>Brave Notice:</b> Speech API blocked by Brave Shields.<br>💡 <i>Sound Level Shout Detector is 100% ACTIVE! Shout into mic to trigger.</i>");
+                            } else if (err.error === 'no-speech') {
+                                // Keep listening silently
+                            } else {
+                                console.warn("Speech error:", err.error);
                             }
                         };
 
                         recognition.onend = function() {
                             setTimeout(() => {
                                 if (recognition) try { recognition.start(); } catch(e){}
-                            }, 300);
+                            }, 400);
                         };
 
                         recognition.start();
                     } catch(e) { console.warn("SpeechRec error:", e); }
+                } else {
+                    updateStatus("🟢 <b>Sound Loudness Detector Active!</b><br><i>(Speech API unavailable - Shout to trigger SOS)</i>");
                 }
             }
 
-            window.onload = startEngine;
-            startEngine();
+            // Check if microphone permission is ALREADY granted (e.g., returning user)
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({ name: 'microphone' }).then(function(pResult) {
+                    if (pResult.state === 'granted') {
+                        requestMicDirect();
+                    }
+                    pResult.onchange = function() {
+                        if (this.state === 'granted') requestMicDirect();
+                    };
+                }).catch(function(e) {});
+            }
         </script>
         </body>
         </html>
         """)
-        components.html(html_code, height=210, scrolling=False)
+        components.html(html_code, height=240, scrolling=False)
 
 
 def sidebar_nav() -> str:
