@@ -514,12 +514,13 @@ def render_voice_sos_widget():
             font-size: 0.72rem;
             color: #10b981;
             margin-top: 0.4rem;
-            background: rgba(0,0,0,0.4);
-            padding: 0.4rem 0.6rem;
+            background: rgba(0,0,0,0.5);
+            padding: 0.45rem 0.65rem;
             border-radius: 6px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            min-height: 24px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            min-height: 28px;
             word-break: break-word;
+            line-height: 1.3;
         }
         .meter-bar-bg {
             width: 100%;
@@ -527,13 +528,13 @@ def render_voice_sos_widget():
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
             overflow: hidden;
-            margin-top: 0.3rem;
+            margin-top: 0.35rem;
         }
         .meter-bar-fill {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #10b981 0%, #f59e0b 60%, #ef4444 100%);
-            transition: width 0.1s ease;
+            background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+            transition: width 0.08s ease;
         }
         .keywords-tag {
             font-size: 0.7rem;
@@ -542,6 +543,7 @@ def render_voice_sos_widget():
             background: rgba(255,255,255,0.04);
             padding: 0.35rem 0.5rem;
             border-radius: 6px;
+            line-height: 1.3;
         }
         .alert-box {
             display: none;
@@ -580,7 +582,7 @@ def render_voice_sos_widget():
         </button>
 
         <div id="statusText" class="status-text">
-            Click button above to enable mic. Say <b>"Help Me"</b> or <b>"Emergency"</b> for auto 112 call.
+            Click button above to enable mic. Say <b>"Help Me"</b>, <b>"Emergency"</b> or <b>Shout</b>.
         </div>
 
         <div id="transcriptBox" class="transcript-box" style="display: none;">
@@ -592,7 +594,7 @@ def render_voice_sos_widget():
         </div>
 
         <div class="keywords-tag">
-            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Save me", "SOS", "Police"
+            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Save me", "SOS", "Police", "Bachao", "Madad"
         </div>
 
         <div id="alertBox" class="alert-box">
@@ -647,7 +649,7 @@ def render_voice_sos_widget():
 
             if (!isListening) {
                 try {
-                    // 1. Direct MediaDevices Mic Stream (works on ALL browsers!)
+                    // 1. Direct MediaDevices Mic Stream (Audio Level Meter + Loud Shout Trigger)
                     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     analyser = audioCtx.createAnalyser();
@@ -659,7 +661,7 @@ def render_voice_sos_widget():
                     btn.classList.add("active-bg");
                     btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
                     dot.classList.add("active");
-                    status.innerHTML = "🎙️ <b>Mic Active & Listening!</b> Say <i>'Help Me'</i> or <i>'Emergency'</i>.";
+                    status.innerHTML = "🎙️ <b>Mic Active & Listening!</b> Speak trigger words or shout.";
                     tBox.style.display = "block";
                     tBox.innerHTML = "🎧 <i>Mic connected! Speak into microphone...</i>";
 
@@ -675,12 +677,12 @@ def render_voice_sos_widget():
 
                         if (meterFill) meterFill.style.width = vol + "%";
 
-                        if (vol > 8 && tBox.innerText.includes("Listening")) {
-                            tBox.innerHTML = "🔊 <i>Sound detected (" + vol + "%)! Hearing your voice...</i>";
+                        if (vol > 12 && tBox.innerText.includes("Listening")) {
+                            tBox.innerHTML = "🔊 <i>Sound detected (" + vol + "%)! Speak or shout loud...</i>";
                         }
 
-                        // Loud Shout / Scream Emergency Trigger Threshold (>65% volume)
-                        if (vol > 65) {
+                        // Loud Shout / Scream Emergency Trigger Threshold (>50% volume)
+                        if (vol > 50) {
                             triggerEmergencyAlert("LOUD SHOUT / SCREAM (" + vol + "%)");
                             return;
                         }
@@ -695,19 +697,24 @@ def render_voice_sos_widget():
                         recognition = new SpeechRec();
                         recognition.continuous = true;
                         recognition.interimResults = true;
-                        recognition.lang = 'en-IN'; // Set to Indian English for accurate local speech matching
+                        recognition.lang = window.navigator.language || 'en-IN';
+
+                        recognition.onstart = function() {
+                            tBox.innerHTML = "🎧 <i>Speech Engine Active! Hearing your voice...</i>";
+                        };
 
                         recognition.onresult = function(event) {
-                            let text = "";
-                            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                                text += event.results[i][0].transcript.toLowerCase();
+                            let fullText = "";
+                            for (let i = 0; i < event.results.length; ++i) {
+                                fullText += event.results[i][0].transcript.toLowerCase() + " ";
                             }
-                            if (text.length > 0) {
-                                tBox.innerHTML = "🗣️ Spoken: <b>" + text + "</b>";
+                            fullText = fullText.trim();
+                            if (fullText.length > 0) {
+                                tBox.innerHTML = "🗣️ Spoken: <b>\"" + fullText + "\"</b>";
                             }
-                            const kw = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save"];
+                            const kw = ["help me", "help", "emergency", "suraksha", "save me", "sos", "police", "danger", "112", "bachao", "save", "madad", "chodo", "stop", "y"];
                             for (let kwItem of kw) {
-                                if (text.includes(kwItem)) {
+                                if (fullText.includes(kwItem)) {
                                     triggerEmergencyAlert(kwItem);
                                     break;
                                 }
@@ -716,20 +723,37 @@ def render_voice_sos_widget():
 
                         recognition.onerror = function(err) {
                             console.log("Speech engine status:", err.error);
+                            if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
+                                tBox.innerHTML = "⚠️ <b>Browser blocked cloud speech recognition</b>.<br>💡 <i>Sound Shout Detector is ACTIVE! Scream/shout to trigger SOS.</i>";
+                            } else if (err.error === 'network') {
+                                tBox.innerHTML = "⚠️ <b>Cloud speech service unavailable</b>.<br>💡 <i>Volume Shout Detector is ACTIVE! Scream/shout to trigger.</i>";
+                            } else if (err.error === 'no-speech') {
+                                tBox.innerHTML = "🎧 <i>Listening... Speak 'Help Me', 'Emergency', or Shout!</i>";
+                            } else {
+                                tBox.innerHTML = "⚠️ <i>Speech status: " + err.error + ". Volume shout trigger is active!</i>";
+                            }
                         };
 
                         recognition.onend = function() {
                             if (isListening) {
-                                try { recognition.start(); } catch(e){}
+                                setTimeout(() => {
+                                    if (isListening && recognition) {
+                                        try { recognition.start(); } catch(e){}
+                                    }
+                                }, 300);
                             }
                         };
 
                         try { recognition.start(); } catch(e){}
+                    } else {
+                        tBox.innerHTML = "⚠️ <i>Speech recognition not supported in this browser. Volume Shout Detector is ACTIVE!</i>";
                     }
 
                 } catch(err) {
                     console.error("Mic Access Error:", err);
                     status.innerHTML = "⚠️ Mic Access Blocked (" + err.name + "). Please click the Lock icon in browser URL bar & allow mic.";
+                    tBox.style.display = "block";
+                    tBox.innerHTML = "❌ <b>Microphone Access Denied</b>. Grant mic access in browser settings.";
                 }
             } else {
                 isListening = false;
@@ -742,14 +766,14 @@ def render_voice_sos_widget():
                 btn.innerHTML = "<span>🎙️ Enable Hands-Free Voice SOS</span>";
                 dot.classList.remove("active");
                 tBox.style.display = "none";
-                status.innerHTML = "Click button above to enable mic. Say <b>'Help Me'</b> or <b>'Emergency'</b> for auto 112 call.";
+                status.innerHTML = "Click button above to enable mic. Say <b>'Help Me'</b>, <b>'Emergency'</b> or <b>Shout</b>.";
             }
         }
     </script>
     </body>
     </html>
     """
-    components.html(html_code, height=230, scrolling=False)
+    components.html(html_code, height=270, scrolling=False)
 
 
 def sidebar_nav() -> str:
