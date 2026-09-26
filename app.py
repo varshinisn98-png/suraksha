@@ -26,26 +26,39 @@ st.set_page_config(
 )
 
 # --------------------------------------------------------------------------
+# Global Iframe Permission Injector (Brave / Chromium Microphone Policy)
+# --------------------------------------------------------------------------
+components.html(
+    """
+    <script>
+    (function enableGlobalMicPermissions() {
+        try {
+            if (window.parent && window.parent.document) {
+                function patchAllIframes() {
+                    var list = window.parent.document.querySelectorAll('iframe');
+                    list.forEach(function(f) {
+                        var cur = f.getAttribute('allow') || '';
+                        if (!cur.includes('microphone')) {
+                            f.setAttribute('allow', 'microphone *; camera *; autoplay *; speech-recognition *;');
+                        }
+                    });
+                }
+                patchAllIframes();
+                var observer = new MutationObserver(function() { patchAllIframes(); });
+                observer.observe(window.parent.document.body, { childList: true, subtree: true });
+            }
+        } catch(e) {}
+    })();
+    </script>
+    """,
+    height=0,
+    width=0,
+)
+
+# --------------------------------------------------------------------------
 # Ultra-Premium Modern Glassmorphism CSS & Styling
 # --------------------------------------------------------------------------
 CUSTOM_CSS = """
-<script>
-    (function enableIframeMicPermissions() {
-        function patchIframes() {
-            try {
-                var iframes = document.querySelectorAll('iframe');
-                iframes.forEach(function(f) {
-                    var cur = f.getAttribute('allow') || '';
-                    if (!cur.includes('microphone')) {
-                        f.setAttribute('allow', cur + '; microphone *; speech-recognition *; autoplay *;');
-                    }
-                });
-            } catch(e) {}
-        }
-        patchIframes();
-        setInterval(patchIframes, 1000);
-    })();
-</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -585,7 +598,8 @@ def render_voice_sos_widget():
                     checkVolume();
                 } catch(err) {
                     console.warn("Direct Mic error:", err);
-                    updateStatus("<button class='btn-grant' onclick='window.requestMicDirect()'>🎙️ RETRY ENABLING MIC</button><div style='font-size:0.68rem; color:#ef4444; margin-top:0.35rem; text-align:center;'>⚠️ Mic Blocked! Click 🔒 icon in Brave URL bar & set Microphone to <b>Allow</b>.</div>");
+                    let errStr = err.name ? (err.name + (err.message ? ": " + err.message : "")) : "Blocked";
+                    updateStatus("<button class='btn-grant' onclick='window.requestMicDirect()'>🎙️ RETRY ENABLING MIC</button><div style='font-size:0.68rem; color:#ef4444; margin-top:0.35rem; text-align:center;'>⚠️ Mic Error (" + errStr + ")<br>👉 Click 🔒 icon in Brave URL bar & set Microphone to <b>Allow</b>.</div>");
                     return;
                 }
 
