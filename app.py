@@ -402,7 +402,7 @@ def render_missing_dataset_message():
 
 def render_voice_sos_widget():
     """
-    Renders a Hands-Free Voice-Activated SOS Audio Trigger Component.
+    Renders a Unified Emergency Command Center with Quick Dial Helplines + Hands-Free Voice SOS Audio Trigger.
     Uses Web Audio API MediaDevices volume analyzer + Speech Recognition for 100% browser compatibility.
     """
     html_code = """
@@ -419,32 +419,69 @@ def render_voice_sos_widget():
             color: #f3f4f6;
             padding: 4px;
         }
-        .voice-card {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(17, 24, 39, 0.95) 100%);
-            border: 1.5px solid rgba(239, 68, 68, 0.5);
-            border-radius: 14px;
-            padding: 0.9rem;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.2);
-            margin-top: 0.2rem;
+        .command-card {
+            background: linear-gradient(160deg, rgba(239, 68, 68, 0.16) 0%, rgba(17, 24, 39, 0.96) 40%, rgba(10, 14, 26, 0.98) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 16px;
+            padding: 1.05rem;
+            box-shadow: 0 12px 32px -8px rgba(239, 68, 68, 0.25), 0 0 1px inset rgba(255, 255, 255, 0.15);
         }
-        .title-row {
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #fca5a5;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 0.6rem;
         }
-        .title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.92rem;
-            font-weight: 800;
-            color: #fca5a5;
+        .helplines-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.45rem;
+            margin-bottom: 0.8rem;
+        }
+        .helpline-btn {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.4rem;
+            justify-content: center;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 10px;
+            padding: 0.55rem 0.25rem;
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .helpline-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.7);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .helpline-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .helpline-lbl {
+            font-size: 0.64rem;
+            color: #fca5a5;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.4) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(239, 68, 68, 0.4) 100%);
+            margin: 0.8rem 0;
         }
         .pulse-dot {
-            width: 10px;
-            height: 10px;
+            width: 9px;
+            height: 9px;
             background-color: #6b7280;
             border-radius: 50%;
             display: inline-block;
@@ -452,83 +489,86 @@ def render_voice_sos_widget():
         }
         .pulse-dot.active {
             background-color: #ef4444;
-            box-shadow: 0 0 12px #ef4444;
+            box-shadow: 0 0 10px #ef4444;
             animation: pulse 1.2s infinite;
         }
         @keyframes pulse {
             0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
-            70% { transform: scale(1.15); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
         .btn-toggle {
             width: 100%;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
             color: #ffffff;
             border: none;
-            padding: 0.65rem 0.8rem;
-            border-radius: 8px;
+            padding: 0.68rem 0.8rem;
+            border-radius: 10px;
             font-weight: 800;
-            font-size: 0.82rem;
+            font-size: 0.83rem;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+        }
+        .btn-toggle:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+        }
+        .btn-toggle.active-bg {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+        .btn-siren {
+            width: 100%;
+            margin-top: 0.45rem;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 0.48rem 0.6rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.76rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.4rem;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-        }
-        .btn-toggle:hover {
-            opacity: 0.92;
-            transform: translateY(-1px);
-        }
-        .btn-toggle.active-bg {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        .btn-siren {
-            width: 100%;
-            margin-top: 0.4rem;
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            color: #fca5a5;
-            padding: 0.45rem 0.6rem;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.76rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.3rem;
+            gap: 0.35rem;
         }
         .btn-siren:hover {
-            background: rgba(239, 68, 68, 0.35);
+            background: rgba(239, 68, 68, 0.25);
+            border-color: rgba(239, 68, 68, 0.6);
+            color: #ffffff;
         }
         .status-text {
             font-size: 0.76rem;
             color: #d1d5db;
-            margin-top: 0.5rem;
+            margin-top: 0.55rem;
             line-height: 1.35;
         }
         .transcript-box {
-            font-size: 0.72rem;
-            color: #10b981;
-            margin-top: 0.4rem;
-            background: rgba(0,0,0,0.5);
-            padding: 0.45rem 0.65rem;
-            border-radius: 6px;
+            font-size: 0.73rem;
+            color: #34d399;
+            margin-top: 0.45rem;
+            background: rgba(5, 10, 20, 0.7);
+            padding: 0.5rem 0.65rem;
+            border-radius: 8px;
             border: 1px solid rgba(16, 185, 129, 0.3);
-            min-height: 28px;
+            min-height: 30px;
             word-break: break-word;
-            line-height: 1.3;
+            line-height: 1.35;
         }
         .meter-bar-bg {
             width: 100%;
             height: 6px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
             border-radius: 4px;
             overflow: hidden;
-            margin-top: 0.35rem;
+            margin-top: 0.4rem;
         }
         .meter-bar-fill {
             height: 100%;
@@ -537,25 +577,26 @@ def render_voice_sos_widget():
             transition: width 0.08s ease;
         }
         .keywords-tag {
-            font-size: 0.7rem;
+            font-size: 0.69rem;
             color: #9ca3af;
-            margin-top: 0.4rem;
-            background: rgba(255,255,255,0.04);
-            padding: 0.35rem 0.5rem;
-            border-radius: 6px;
-            line-height: 1.3;
+            margin-top: 0.45rem;
+            background: rgba(255,255,255,0.03);
+            padding: 0.4rem 0.55rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            line-height: 1.35;
         }
         .alert-box {
             display: none;
-            margin-top: 0.6rem;
+            margin-top: 0.65rem;
             background: #dc2626;
             color: #ffffff;
-            padding: 0.6rem;
+            padding: 0.65rem;
             border-radius: 8px;
             font-weight: 800;
             font-size: 0.78rem;
             text-align: center;
-            box-shadow: 0 0 16px rgba(220, 38, 38, 0.8);
+            box-shadow: 0 0 18px rgba(220, 38, 38, 0.85);
             animation: flash 0.4s infinite alternate;
         }
         @keyframes flash {
@@ -565,11 +606,32 @@ def render_voice_sos_widget():
     </style>
     </head>
     <body>
-    <div class="voice-card">
-        <div class="title-row">
-            <div class="title">
-                🎙️ HANDS-FREE VOICE SOS
-            </div>
+    <div class="command-card">
+        <!-- Section 1: Emergency Helplines Grid -->
+        <div class="section-title">
+            <span>🚨 Emergency Helplines</span>
+            <span style="font-size: 0.65rem; color: #9ca3af; font-weight: 600;">TAP TO CALL</span>
+        </div>
+        <div class="helplines-grid">
+            <a href="tel:1091" target="_parent" class="helpline-btn">
+                <span class="helpline-num">1091</span>
+                <span class="helpline-lbl">Women</span>
+            </a>
+            <a href="tel:181" target="_parent" class="helpline-btn">
+                <span class="helpline-num">181</span>
+                <span class="helpline-lbl">Distress</span>
+            </a>
+            <a href="tel:112" target="_parent" class="helpline-btn">
+                <span class="helpline-num">112</span>
+                <span class="helpline-lbl">National</span>
+            </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Section 2: Hands-Free Voice SOS -->
+        <div class="section-title">
+            <span>🎙️ Hands-Free Voice SOS</span>
             <div id="pulseDot" class="pulse-dot"></div>
         </div>
 
@@ -582,7 +644,7 @@ def render_voice_sos_widget():
         </button>
 
         <div id="statusText" class="status-text">
-            Click button above to enable mic. Say <b>"Help Me"</b>, <b>"Emergency"</b> or <b>Shout</b>.
+            Enable mic above. Say <b>"Help Me"</b>, <b>"Emergency"</b>, or <b>Shout</b>.
         </div>
 
         <div id="transcriptBox" class="transcript-box" style="display: none;">
@@ -594,7 +656,7 @@ def render_voice_sos_widget():
         </div>
 
         <div class="keywords-tag">
-            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Save me", "SOS", "Police", "Bachao", "Madad"
+            🎯 <b>Triggers:</b> "Help me", "Emergency", "Suraksha", "Bachao", "Madad", "Shout"
         </div>
 
         <div id="alertBox" class="alert-box">
@@ -766,14 +828,14 @@ def render_voice_sos_widget():
                 btn.innerHTML = "<span>🎙️ Enable Hands-Free Voice SOS</span>";
                 dot.classList.remove("active");
                 tBox.style.display = "none";
-                status.innerHTML = "Click button above to enable mic. Say <b>'Help Me'</b>, <b>'Emergency'</b> or <b>Shout</b>.";
+                status.innerHTML = "Enable mic above. Say <b>'Help Me'</b>, <b>'Emergency'</b>, or <b>Shout</b>.";
             }
         }
     </script>
     </body>
     </html>
     """
-    components.html(html_code, height=270, scrolling=False)
+    components.html(html_code, height=435, scrolling=False)
 
 
 def sidebar_nav() -> str:
@@ -809,17 +871,6 @@ def sidebar_nav() -> str:
     )
 
     st.sidebar.divider()
-    st.sidebar.markdown(
-        """
-        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); padding: 0.9rem; border-radius: 12px; font-size: 0.82rem; color: #fca5a5;">
-            <div style="font-weight: 800; color: #ef4444; margin-bottom: 0.4rem; font-size: 0.9rem;">🚨 Women Emergency Helplines</div>
-            <div style="margin-bottom: 0.35rem;"><a href="tel:1091" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>1091</b> — Women Helpline (Call)</a></div>
-            <div style="margin-bottom: 0.35rem;"><a href="tel:181" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>181</b> — Women in Distress (Call)</a></div>
-            <div><a href="tel:112" style="color: #fca5a5; text-decoration: none; display: flex; align-items: center; gap: 0.3rem;">📞 <b>112</b> — National Emergency (Call)</a></div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
     with st.sidebar:
         render_voice_sos_widget()
     return page
