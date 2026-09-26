@@ -417,9 +417,8 @@ def render_voice_sos_widget():
     sos_active = st.sidebar.toggle("🎙️ Enable Hands-Free Voice SOS", key="voice_sos_active_toggle")
 
     if sos_active:
-        # Render the listening engine HTML component
-        html_code = clean_html("""
-        <!DOCTYPE html>
+        # Render the listening engine HTML component (raw HTML string without clean_html to preserve JS linebreaks)
+        html_code = """<!DOCTYPE html>
         <html>
         <head>
         <meta charset="utf-8">
@@ -478,7 +477,7 @@ def render_voice_sos_widget():
 
             <div id="transcriptBox" class="transcript-box">
                 <div id="statusContent">
-                    <button id="grantMicBtn" class="btn-grant" onclick="requestMicDirect()">
+                    <button id="grantMicBtn" class="btn-grant" onclick="window.requestMicDirect()">
                         🎙️ TAP TO ENABLE MICROPHONE
                     </button>
                     <div style="font-size: 0.68rem; color: #9ca3af; margin-top: 0.35rem; text-align: center;">
@@ -501,6 +500,13 @@ def render_voice_sos_widget():
         </div>
 
         <script>
+            /* Ensure iframe permission policy allows microphone */
+            try {
+                if (window.frameElement) {
+                    window.frameElement.setAttribute('allow', 'microphone *; camera *; autoplay *; speech-recognition *;');
+                }
+            } catch(e) {}
+
             let recognition = null;
             let audioStream = null;
             let audioCtx = null;
@@ -546,7 +552,7 @@ def render_voice_sos_widget():
             async function requestMicDirect() {
                 updateStatus("🎧 <b>Connecting mic...</b><br><i>Click 'Allow' in browser popup if prompted!</i>");
 
-                // 1. Direct getUserMedia with user gesture
+                /* 1. Direct getUserMedia with user gesture */
                 try {
                     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -579,11 +585,11 @@ def render_voice_sos_widget():
                     checkVolume();
                 } catch(err) {
                     console.warn("Direct Mic error:", err);
-                    updateStatus("<button class='btn-grant' onclick='requestMicDirect()'>🎙️ RETRY ENABLING MIC</button><div style='font-size:0.68rem; color:#ef4444; margin-top:0.35rem; text-align:center;'>⚠️ Mic Blocked! Click 🔒 icon in Brave URL bar & set Microphone to <b>Allow</b>.</div>");
+                    updateStatus("<button class='btn-grant' onclick='window.requestMicDirect()'>🎙️ RETRY ENABLING MIC</button><div style='font-size:0.68rem; color:#ef4444; margin-top:0.35rem; text-align:center;'>⚠️ Mic Blocked! Click 🔒 icon in Brave URL bar & set Microphone to <b>Allow</b>.</div>");
                     return;
                 }
 
-                // 2. Speech Recognition
+                /* 2. Speech Recognition */
                 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (SpeechRec) {
                     try {
@@ -619,7 +625,7 @@ def render_voice_sos_widget():
                             if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
                                 updateStatus("🦁 <b>Brave Notice:</b> Speech API blocked by Brave Shields.<br>💡 <i>Sound Level Shout Detector is 100% ACTIVE! Shout into mic to trigger.</i>");
                             } else if (err.error === 'no-speech') {
-                                // Keep listening silently
+                                /* Keep listening silently */
                             } else {
                                 console.warn("Speech error:", err.error);
                             }
@@ -638,7 +644,10 @@ def render_voice_sos_widget():
                 }
             }
 
-            // Check if microphone permission is ALREADY granted (e.g., returning user)
+            /* Export to window object for click handlers */
+            window.requestMicDirect = requestMicDirect;
+
+            /* Check if microphone permission is ALREADY granted (e.g., returning user) */
             if (navigator.permissions && navigator.permissions.query) {
                 navigator.permissions.query({ name: 'microphone' }).then(function(pResult) {
                     if (pResult.state === 'granted') {
@@ -651,8 +660,7 @@ def render_voice_sos_widget():
             }
         </script>
         </body>
-        </html>
-        """)
+        </html>"""
         components.html(html_code, height=240, scrolling=False)
 
 
