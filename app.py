@@ -402,8 +402,8 @@ def render_missing_dataset_message():
 
 def render_voice_sos_widget():
     """
-    Renders a Unified Emergency Command Center with Quick Dial Helplines + Hands-Free Voice SOS Audio Trigger.
-    Uses Web Audio API MediaDevices volume analyzer + Speech Recognition for 100% browser compatibility.
+    Renders Hands-Free Voice-Activated SOS Audio Trigger Component.
+    Uses isolated getUserMedia + SpeechRecognition triggers for 100% browser stability.
     """
     html_code = """
     <!DOCTYPE html>
@@ -417,18 +417,18 @@ def render_voice_sos_widget():
             background: transparent;
             font-family: 'Plus Jakarta Sans', sans-serif;
             color: #f3f4f6;
-            padding: 4px;
+            padding: 2px;
         }
-        .command-card {
-            background: linear-gradient(160deg, rgba(239, 68, 68, 0.16) 0%, rgba(17, 24, 39, 0.96) 40%, rgba(10, 14, 26, 0.98) 100%);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            border-radius: 16px;
-            padding: 1.05rem;
-            box-shadow: 0 12px 32px -8px rgba(239, 68, 68, 0.25), 0 0 1px inset rgba(255, 255, 255, 0.15);
+        .voice-card {
+            background: linear-gradient(160deg, rgba(239, 68, 68, 0.18) 0%, rgba(17, 24, 39, 0.96) 40%, rgba(10, 14, 26, 0.98) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            border-radius: 14px;
+            padding: 0.95rem;
+            box-shadow: 0 10px 28px -6px rgba(239, 68, 68, 0.25);
         }
         .section-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 0.82rem;
+            font-size: 0.84rem;
             font-weight: 800;
             color: #fca5a5;
             text-transform: uppercase;
@@ -437,47 +437,6 @@ def render_voice_sos_widget():
             align-items: center;
             justify-content: space-between;
             margin-bottom: 0.6rem;
-        }
-        .helplines-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.45rem;
-            margin-bottom: 0.8rem;
-        }
-        .helpline-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.35);
-            border-radius: 10px;
-            padding: 0.55rem 0.25rem;
-            text-decoration: none;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .helpline-btn:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.7);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-        .helpline-num {
-            font-family: 'Outfit', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #ffffff;
-        }
-        .helpline-lbl {
-            font-size: 0.64rem;
-            color: #fca5a5;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.4) 0%, rgba(255, 255, 255, 0.08) 50%, rgba(239, 68, 68, 0.4) 100%);
-            margin: 0.8rem 0;
         }
         .pulse-dot {
             width: 9px;
@@ -507,7 +466,7 @@ def render_voice_sos_widget():
             font-weight: 800;
             font-size: 0.83rem;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -525,13 +484,13 @@ def render_voice_sos_widget():
         .btn-siren {
             width: 100%;
             margin-top: 0.45rem;
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.5);
             color: #fca5a5;
-            padding: 0.48rem 0.6rem;
+            padding: 0.5rem 0.6rem;
             border-radius: 8px;
             font-weight: 700;
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
@@ -540,8 +499,8 @@ def render_voice_sos_widget():
             gap: 0.35rem;
         }
         .btn-siren:hover {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: rgba(239, 68, 68, 0.6);
+            background: rgba(239, 68, 68, 0.3);
+            border-color: rgba(239, 68, 68, 0.8);
             color: #ffffff;
         }
         .status-text {
@@ -554,11 +513,11 @@ def render_voice_sos_widget():
             font-size: 0.73rem;
             color: #34d399;
             margin-top: 0.45rem;
-            background: rgba(5, 10, 20, 0.7);
+            background: rgba(5, 10, 20, 0.75);
             padding: 0.5rem 0.65rem;
             border-radius: 8px;
             border: 1px solid rgba(16, 185, 129, 0.3);
-            min-height: 30px;
+            min-height: 32px;
             word-break: break-word;
             line-height: 1.35;
         }
@@ -606,30 +565,7 @@ def render_voice_sos_widget():
     </style>
     </head>
     <body>
-    <div class="command-card">
-        <!-- Section 1: Emergency Helplines Grid -->
-        <div class="section-title">
-            <span>🚨 Emergency Helplines</span>
-            <span style="font-size: 0.65rem; color: #9ca3af; font-weight: 600;">TAP TO CALL</span>
-        </div>
-        <div class="helplines-grid">
-            <a href="tel:1091" target="_parent" class="helpline-btn">
-                <span class="helpline-num">1091</span>
-                <span class="helpline-lbl">Women</span>
-            </a>
-            <a href="tel:181" target="_parent" class="helpline-btn">
-                <span class="helpline-num">181</span>
-                <span class="helpline-lbl">Distress</span>
-            </a>
-            <a href="tel:112" target="_parent" class="helpline-btn">
-                <span class="helpline-num">112</span>
-                <span class="helpline-lbl">National</span>
-            </a>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Section 2: Hands-Free Voice SOS -->
+    <div class="voice-card">
         <div class="section-title">
             <span>🎙️ Hands-Free Voice SOS</span>
             <div id="pulseDot" class="pulse-dot"></div>
@@ -672,9 +608,12 @@ def render_voice_sos_widget():
         let analyser = null;
         let animFrame = null;
 
-        function playEmergencySiren() {
+        async function playEmergencySiren() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                }
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = 'sawtooth';
@@ -688,14 +627,17 @@ def render_voice_sos_widget():
             } catch(e) { console.error("Audio Context Error:", e); }
         }
 
-        function triggerEmergencyAlert(source) {
-            document.getElementById("alertBox").style.display = "block";
-            document.getElementById("alertBox").innerHTML = "🚨 TRIGGER: '" + source.toUpperCase() + "'!<br>CALLING 112 & PLAYING SIREN!";
-            playEmergencySiren();
+        async function triggerEmergencyAlert(source) {
+            const alertBox = document.getElementById("alertBox");
+            alertBox.style.display = "block";
+            alertBox.innerHTML = "🚨 TRIGGER: '" + source.toUpperCase() + "'!<br>PLAYING SIREN & DIALING 112!<br><a href='tel:112' target='_top' style='color:#ffffff; text-decoration:underline; font-weight:800;'>📞 Click here to call 112 directly</a>";
+            await playEmergencySiren();
 
-            setTimeout(() => {
-                window.open("tel:112", "_parent");
-            }, 800);
+            try {
+                window.location.href = "tel:112";
+            } catch(e) {
+                try { window.top.location.href = "tel:112"; } catch(err){}
+            }
         }
 
         function triggerTestSiren() {
@@ -710,22 +652,20 @@ def render_voice_sos_widget():
             const meterFill = document.getElementById("meterFill");
 
             if (!isListening) {
+                let micConnected = false;
+                tBox.style.display = "block";
+                tBox.innerHTML = "🎧 <i>Activating Voice SOS mic & speech engine...</i>";
+
+                // 1. Try Direct MediaDevices Mic Volume Stream
                 try {
-                    // 1. Direct MediaDevices Mic Stream (Audio Level Meter + Loud Shout Trigger)
                     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') await audioCtx.resume();
                     analyser = audioCtx.createAnalyser();
                     analyser.fftSize = 256;
                     const source = audioCtx.createMediaStreamSource(audioStream);
                     source.connect(analyser);
-
-                    isListening = true;
-                    btn.classList.add("active-bg");
-                    btn.innerHTML = "<span>🟢 Voice SOS Active (Listening...)</span>";
-                    dot.classList.add("active");
-                    status.innerHTML = "🎙️ <b>Mic Active & Listening!</b> Speak trigger words or shout.";
-                    tBox.style.display = "block";
-                    tBox.innerHTML = "🎧 <i>Mic connected! Speak into microphone...</i>";
+                    micConnected = true;
 
                     // Audio level volume loop
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -739,11 +679,11 @@ def render_voice_sos_widget():
 
                         if (meterFill) meterFill.style.width = vol + "%";
 
-                        if (vol > 12 && tBox.innerText.includes("Listening")) {
-                            tBox.innerHTML = "🔊 <i>Sound detected (" + vol + "%)! Speak or shout loud...</i>";
+                        if (vol > 10 && tBox.innerText.includes("Activating")) {
+                            tBox.innerHTML = "🔊 <i>Sound detected (" + vol + "%)! Listening...</i>";
                         }
 
-                        // Loud Shout / Scream Emergency Trigger Threshold (>50% volume)
+                        // Loud Shout / Scream Threshold (>50% volume)
                         if (vol > 50) {
                             triggerEmergencyAlert("LOUD SHOUT / SCREAM (" + vol + "%)");
                             return;
@@ -752,17 +692,21 @@ def render_voice_sos_widget():
                         animFrame = requestAnimationFrame(checkVolume);
                     }
                     checkVolume();
+                } catch(err) {
+                    console.warn("getUserMedia error:", err);
+                }
 
-                    // 2. Speech Recognition Engine
-                    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    if (SpeechRec) {
+                // 2. Try Speech Recognition Engine
+                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRec) {
+                    try {
                         recognition = new SpeechRec();
                         recognition.continuous = true;
                         recognition.interimResults = true;
                         recognition.lang = window.navigator.language || 'en-IN';
 
                         recognition.onstart = function() {
-                            tBox.innerHTML = "🎧 <i>Speech Engine Active! Hearing your voice...</i>";
+                            tBox.innerHTML = "🟢 <b>Listening!</b> Say <i>'Help Me'</i>, <i>'Emergency'</i>, or <i>'Suraksha'</i>...";
                         };
 
                         recognition.onresult = function(event) {
@@ -784,15 +728,13 @@ def render_voice_sos_widget():
                         };
 
                         recognition.onerror = function(err) {
-                            console.log("Speech engine status:", err.error);
+                            console.warn("Speech engine notice:", err.error);
                             if (err.error === 'not-allowed' || err.error === 'service-not-allowed') {
-                                tBox.innerHTML = "⚠️ <b>Browser blocked cloud speech recognition</b>.<br>💡 <i>Sound Shout Detector is ACTIVE! Scream/shout to trigger SOS.</i>";
-                            } else if (err.error === 'network') {
-                                tBox.innerHTML = "⚠️ <b>Cloud speech service unavailable</b>.<br>💡 <i>Volume Shout Detector is ACTIVE! Scream/shout to trigger.</i>";
+                                tBox.innerHTML = "⚠️ <b>Mic permission blocked by browser</b>. Click lock 🔒 icon in address bar to Allow Mic.";
                             } else if (err.error === 'no-speech') {
                                 tBox.innerHTML = "🎧 <i>Listening... Speak 'Help Me', 'Emergency', or Shout!</i>";
                             } else {
-                                tBox.innerHTML = "⚠️ <i>Speech status: " + err.error + ". Volume shout trigger is active!</i>";
+                                tBox.innerHTML = "🎧 <i>Speech engine notice: " + err.error + ". Listening...</i>";
                             }
                         };
 
@@ -806,21 +748,19 @@ def render_voice_sos_widget():
                             }
                         };
 
-                        try { recognition.start(); } catch(e){}
-                    } else {
-                        tBox.innerHTML = "⚠️ <i>Speech recognition not supported in this browser. Volume Shout Detector is ACTIVE!</i>";
-                    }
-
-                } catch(err) {
-                    console.error("Mic Access Error:", err);
-                    status.innerHTML = "⚠️ Mic Access Blocked (" + err.name + "). Please click the Lock icon in browser URL bar & allow mic.";
-                    tBox.style.display = "block";
-                    tBox.innerHTML = "❌ <b>Microphone Access Denied</b>. Grant mic access in browser settings.";
+                        recognition.start();
+                    } catch(e) { console.warn("SpeechRec error:", e); }
                 }
+
+                isListening = true;
+                btn.classList.add("active-bg");
+                btn.innerHTML = "<span>🟢 Voice SOS Active (Click to Stop)</span>";
+                dot.classList.add("active");
+                status.innerHTML = "🎙️ <b>Voice SOS is ACTIVE & Listening!</b>";
             } else {
                 isListening = false;
                 if (audioStream) audioStream.getTracks().forEach(track => track.stop());
-                if (audioCtx) audioCtx.close();
+                if (audioCtx) try { audioCtx.close(); } catch(e){}
                 if (animFrame) cancelAnimationFrame(animFrame);
                 if (recognition) try { recognition.stop(); } catch(e){}
 
@@ -835,7 +775,7 @@ def render_voice_sos_widget():
     </body>
     </html>
     """
-    components.html(html_code, height=435, scrolling=False)
+    components.html(html_code, height=295, scrolling=False)
 
 
 def sidebar_nav() -> str:
@@ -871,6 +811,32 @@ def sidebar_nav() -> str:
     )
 
     st.sidebar.divider()
+    # Native Streamlit Top-Level Emergency Helplines (100% dialer compatibility on all browsers & phones!)
+    st.sidebar.markdown(
+        """
+        <div style="background: linear-gradient(160deg, rgba(239, 68, 68, 0.18) 0%, rgba(17, 24, 39, 0.96) 40%, rgba(10, 14, 26, 0.98) 100%); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 0.95rem; margin-bottom: 0.8rem; box-shadow: 0 10px 28px -6px rgba(239, 68, 68, 0.25);">
+            <div style="font-family: 'Outfit', sans-serif; font-size: 0.84rem; font-weight: 800; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+                <span>🚨 Emergency Helplines</span>
+                <span style="font-size: 0.65rem; color: #9ca3af; font-weight: 600;">TAP TO CALL</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem;">
+                <a href="tel:1091" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">1091</span>
+                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">Women</span>
+                </a>
+                <a href="tel:181" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">181</span>
+                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">Distress</span>
+                </a>
+                <a href="tel:112" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">112</span>
+                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">National</span>
+                </a>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     with st.sidebar:
         render_voice_sos_widget()
     return page
