@@ -520,6 +520,9 @@ def render_voice_sos_widget():
                 }
             } catch(e) {}
 
+            let parentWin = (window.parent && window.parent.navigator) ? window.parent : window;
+            let parentNav = parentWin.navigator || navigator;
+
             let recognition = null;
             let audioStream = null;
             let audioCtx = null;
@@ -527,7 +530,8 @@ def render_voice_sos_widget():
 
             async function playEmergencySiren() {
                 try {
-                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    let AudioCtx = parentWin.AudioContext || parentWin.webkitAudioContext || window.AudioContext || window.webkitAudioContext;
+                    const ctx = new AudioCtx();
                     if (ctx.state === 'suspended') await ctx.resume();
                     const osc = ctx.createOscillator();
                     const gain = ctx.createGain();
@@ -549,7 +553,7 @@ def render_voice_sos_widget():
                     alertBox.innerHTML = "🚨 TRIGGER: '" + source.toUpperCase() + "'!<br>DIALING 112 & PLAYING SIREN!<br><a href='tel:112' target='_parent' style='color:#ffffff; text-decoration:underline; font-weight:800;'>📞 Click to Call 112</a>";
                 }
                 await playEmergencySiren();
-                try { window.open("tel:112", "_parent"); } catch(e){}
+                try { parentWin.open("tel:112", "_parent"); } catch(e){}
             }
 
             function updateStatus(html) {
@@ -565,10 +569,31 @@ def render_voice_sos_widget():
             async function requestMicDirect() {
                 updateStatus("🎧 <b>Connecting mic...</b><br><i>Click 'Allow' in browser popup if prompted!</i>");
 
-                /* 1. Direct getUserMedia with user gesture */
+                /* Patch frameElement allow attribute */
                 try {
-                    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (window.frameElement) {
+                        window.frameElement.setAttribute('allow', 'microphone *; camera *; autoplay *; speech-recognition *;');
+                    }
+                } catch(e) {}
+
+                /* Try parent mediaDevices first, fallback to local window */
+                let getMedia = null;
+                if (parentNav.mediaDevices && parentNav.mediaDevices.getUserMedia) {
+                    getMedia = parentNav.mediaDevices.getUserMedia.bind(parentNav.mediaDevices);
+                } else if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    getMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+                }
+
+                if (!getMedia) {
+                    updateStatus("⚠️ <b>Microphone API not supported by browser</b>.");
+                    return;
+                }
+
+                /* 1. Direct getUserMedia */
+                try {
+                    audioStream = await getMedia({ audio: true });
+                    let AudioCtx = parentWin.AudioContext || parentWin.webkitAudioContext || window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioCtx();
                     if (audioCtx.state === 'suspended') await audioCtx.resume();
                     analyser = audioCtx.createAnalyser();
                     analyser.fftSize = 256;
@@ -604,14 +629,14 @@ def render_voice_sos_widget():
                 }
 
                 /* 2. Speech Recognition */
-                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const SpeechRec = parentWin.SpeechRecognition || parentWin.webkitSpeechRecognition || window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (SpeechRec) {
                     try {
                         if (recognition) { try { recognition.abort(); } catch(e){} }
                         recognition = new SpeechRec();
                         recognition.continuous = true;
                         recognition.interimResults = true;
-                        recognition.lang = window.navigator.language || 'en-IN';
+                        recognition.lang = parentNav.language || window.navigator.language || 'en-IN';
 
                         recognition.onstart = function() {
                             updateStatus("🟢 <b>Listening Active!</b> Say <i>'Help Me'</i>, <i>'Emergency'</i>, or <i>'Suraksha'</i>...");
@@ -661,9 +686,19 @@ def render_voice_sos_widget():
             /* Export to window object for click handlers */
             window.requestMicDirect = requestMicDirect;
 
-            /* Check if microphone permission is ALREADY granted (e.g., returning user) */
-            if (navigator.permissions && navigator.permissions.query) {
-                navigator.permissions.query({ name: 'microphone' }).then(function(pResult) {
+            /* Double bind click listener */
+            document.addEventListener("DOMContentLoaded", function() {
+                const btn = document.getElementById("grantMicBtn");
+                if (btn) btn.addEventListener("click", requestMicDirect);
+            });
+            setTimeout(function() {
+                const btn = document.getElementById("grantMicBtn");
+                if (btn) btn.addEventListener("click", requestMicDirect);
+            }, 300);
+
+            /* Check if microphone permission is ALREADY granted */
+            if (parentNav.permissions && parentNav.permissions.query) {
+                parentNav.permissions.query({ name: 'microphone' }).then(function(pResult) {
                     if (pResult.state === 'granted') {
                         requestMicDirect();
                     }
