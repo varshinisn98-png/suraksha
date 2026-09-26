@@ -727,7 +727,7 @@ def render_voice_sos_widget():
         })();
     </script>
     """
-    st.sidebar.markdown(widget_html, unsafe_allow_html=True)
+    st.sidebar.markdown(textwrap.dedent(widget_html), unsafe_allow_html=True)
 
 
 def sidebar_nav() -> str:
