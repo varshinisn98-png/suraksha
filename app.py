@@ -386,6 +386,72 @@ def render_missing_dataset_message():
 
 
 
+def render_user_auth_widget():
+    """
+    User Login & Logout Authentication Widget.
+    Displays:
+    - Personalized greeting '👋 Hi, Welcome [Name]' when logged in.
+    - Notification '🔒 You are logged out' when logged out.
+    """
+    if "user_logged_in" not in st.session_state:
+        st.session_state.user_logged_in = False
+    if "user_name" not in st.session_state:
+        st.session_state.user_name = ""
+    if "auth_status_msg" not in st.session_state:
+        st.session_state.auth_status_msg = ""
+
+    # Show notification banner if status changed
+    if st.session_state.auth_status_msg == "login_success":
+        st.sidebar.success(f"🎉 Welcome, {st.session_state.user_name}!")
+        st.session_state.auth_status_msg = "active"
+    elif st.session_state.auth_status_msg == "logged_out":
+        st.sidebar.info("🔒 You are logged out.")
+        st.session_state.auth_status_msg = ""
+
+    if st.session_state.user_logged_in:
+        user_display = st.session_state.user_name.strip() or "User"
+        st.sidebar.markdown(
+            clean_html(f"""
+            <div style="background: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(17, 24, 39, 0.95) 100%); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 800; color: #34d399; margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+                    👋 Hi, Welcome {user_display}!
+                </div>
+                <div style="font-size: 0.72rem; color: #9ca3af; font-weight: 600;">
+                    🟢 Logged In | Suraksha AI Safeguard
+                </div>
+            </div>
+            """),
+            unsafe_allow_html=True,
+        )
+        if st.sidebar.button("🚪 Log Out", key="user_auth_logout_btn", use_container_width=True):
+            st.session_state.user_logged_in = False
+            st.session_state.user_name = ""
+            st.session_state.auth_status_msg = "logged_out"
+            st.rerun()
+    else:
+        st.sidebar.markdown(
+            """
+            <div style="font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 800; color: #818cf8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">
+                👤 USER LOGIN & ACCESS
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        with st.sidebar.form(key="user_login_form"):
+            name_val = st.text_input("Enter Your Name:", key="login_name_val", placeholder="e.g. Varshini")
+            pass_val = st.text_input("Password:", type="password", key="login_pass_val", placeholder="••••••••")
+            login_submitted = st.form_submit_button("🔑 Log In", use_container_width=True)
+
+            if login_submitted:
+                if name_val.strip():
+                    st.session_state.user_logged_in = True
+                    st.session_state.user_name = name_val.strip()
+                    st.session_state.auth_status_msg = "login_success"
+                    st.rerun()
+                else:
+                    st.error("Please enter your name to log in.")
+
+
 def sidebar_nav() -> str:
     logo_html = get_rotating_logo_html(size=70)
     st.sidebar.markdown(
@@ -404,6 +470,8 @@ def sidebar_nav() -> str:
         """),
         unsafe_allow_html=True,
     )
+    st.sidebar.divider()
+    render_user_auth_widget()
     st.sidebar.divider()
     page = st.sidebar.radio(
         "Navigation",
