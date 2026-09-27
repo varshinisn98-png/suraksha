@@ -405,6 +405,32 @@ def sidebar_nav() -> str:
         unsafe_allow_html=True,
     )
     st.sidebar.divider()
+    if st.session_state.get("is_logged_in", False):
+        user_display = st.session_state.get("logged_user", "User")
+        role_display = st.session_state.get("logged_role", "Citizen")
+        st.sidebar.markdown(
+            clean_html(f"""
+            <div style="background: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(17, 24, 39, 0.95) 100%); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 800; color: #34d399; margin-bottom: 0.2rem;">
+                    👋 Welcome, {user_display}!
+                </div>
+                <div style="font-size: 0.72rem; color: #9ca3af; font-weight: 600;">
+                    🛡️ Role: <span style="color: #a7f3d0; font-weight: 700;">{role_display}</span>
+                </div>
+                <div style="font-size: 0.68rem; color: #10b981; margin-top: 0.25rem; font-weight: 600;">
+                    🟢 Logged In | Suraksha AI
+                </div>
+            </div>
+            """),
+            unsafe_allow_html=True,
+        )
+        if st.sidebar.button("🚪 Logout", key="sidebar_user_logout_btn", use_container_width=True):
+            st.session_state.is_logged_in = False
+            st.session_state.logged_user = ""
+            st.session_state.logged_role = ""
+            st.toast("Logged out of SURAKSHA AI", icon="🚪")
+            st.rerun()
+        st.sidebar.divider()
     page = st.sidebar.radio(
         "Navigation",
         [
@@ -1215,21 +1241,23 @@ def page_home(df: pd.DataFrame | None):
                 unsafe_allow_html=True,
             )
             with st.form("login_form"):
+                full_name = st.text_input("Full Name", placeholder="e.g. Varshini")
                 role = st.selectbox("Role", ["Citizen / Traveler", "Safety Researcher / Analyst", "Law Enforcement / Official"])
                 user_input = st.text_input("Mobile / Email", placeholder="e.g. user@example.com")
                 pass_input = st.text_input("Password", type="password", placeholder="••••••••")
                 submit_login = st.form_submit_button("🔓 Login")
                 
             if submit_login:
-                if user_input.strip():
+                display_name = full_name.strip() or user_input.strip()
+                if display_name:
                     st.session_state.is_logged_in = True
-                    st.session_state.logged_user = user_input.strip()
+                    st.session_state.logged_user = display_name
                     st.session_state.logged_role = role
                     st.session_state.show_login = False
-                    st.toast(f"Logged in as {user_input.strip()}!", icon="🎉")
+                    st.toast(f"Logged in as {display_name}!", icon="🎉")
                     st.rerun()
                 else:
-                    st.warning("Please enter email or mobile number.")
+                    st.warning("Please enter your name, email, or mobile number.")
 
         if st.button("✖ Close Login", key="close_login_btn"):
             st.session_state.show_login = False
