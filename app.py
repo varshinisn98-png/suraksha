@@ -3693,7 +3693,7 @@ def main():
         page_home(df)
     elif "Safe Route" in page:
         page_safe_routes(df, df_police)
-    elif "Police Stations" in page:
+    elif "Police" in page:
         page_police_stations(df_police)
     elif "City & District Explorer" in page:
         page_city_analysis(df)
