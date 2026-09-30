@@ -34,9 +34,13 @@ def load_artifacts():
             "No trained model found in models/. Run `python -m src.train` first "
             "(after placing a real dataset in data/raw/ — see data/dataset_sources.md)."
         )
-    import tensorflow as tf
+    try:
+        import tensorflow as tf
+        dl_model = tf.keras.models.load_model(config.MODELS_DIR / "deep_learning_model.keras")
+    except Exception as e:
+        logger.warning(f"Could not load TensorFlow deep learning model: {e}. Falling back to baseline Random Forest model.")
+        dl_model = None
 
-    dl_model = tf.keras.models.load_model(config.MODELS_DIR / "deep_learning_model.keras")
     scaler = joblib.load(config.MODELS_DIR / "scaler.pkl")
     imputer = joblib.load(config.MODELS_DIR / "imputer.pkl")
     label_encoder = joblib.load(config.MODELS_DIR / "label_encoder.pkl")
@@ -58,7 +62,13 @@ def predict_risk(feature_row: dict, artifacts: dict) -> dict:
     X_imputed = artifacts["imputer"].transform(X)
     X_scaled = artifacts["scaler"].transform(X_imputed)
 
-    proba = artifacts["dl_model"].predict(X_scaled, verbose=0)[0]
+    dl_model = artifacts.get("dl_model")
+    if dl_model is not None:
+        proba = dl_model.predict(X_scaled, verbose=0)[0]
+    else:
+        baseline_model = artifacts["baseline_model"]
+        proba = baseline_model.predict_proba(X_scaled)[0]
+
     pred_idx = int(np.argmax(proba))
     label = artifacts["label_encoder"].inverse_transform([pred_idx])[0]
 

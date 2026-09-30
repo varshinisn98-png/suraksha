@@ -16,7 +16,7 @@ import streamlit.components.v1 as components
 import folium
 from streamlit_folium import st_folium
 
-from src import config, data_loader, predict, visualization
+from src import config, data_loader, predict, visualization, auth
 
 st.set_page_config(
     page_title="SURAKSHA AI | National Women Safety Intelligence Platform",
@@ -32,29 +32,229 @@ CUSTOM_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    color: #f3f4f6;
+/* -------------------------------------------------------------------------- */
+/* Global Canvas & Dark Base Theme                                            */
+/* -------------------------------------------------------------------------- */
+html, body, .stApp {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    background: radial-gradient(circle at 15% 15%, #111827 0%, #090d16 50%, #05070c 100%) !important;
+    background-attachment: fixed !important;
+    color: #f3f4f6 !important;
 }
 
-/* Background canvas */
-.stApp {
-    background: radial-gradient(circle at 15% 15%, #111827 0%, #090d16 50%, #05070c 100%);
-    background-attachment: fixed;
-}
-
-/* Hide default streamlit header bar decorations */
+/* Header bar */
 header[data-testid="stHeader"] {
-    background: rgba(9, 13, 22, 0.7);
-    backdrop-filter: blur(12px);
+    background: rgba(9, 13, 22, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
 }
 
-/* Custom Glass Cards */
+/* Headings */
+h1, h2, h3, h4, h5, h6,
+.stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.stMarkdown p, .stMarkdown span, .stMarkdown div {
+    color: #f3f4f6 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sidebar Navigation & Styling                                               */
+/* -------------------------------------------------------------------------- */
+section[data-testid="stSidebar"] {
+    background-color: #0b0f19 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] div,
+section[data-testid="stSidebar"] label {
+    color: #f3f4f6 !important;
+}
+
+/* Sidebar Navigation Radio Items */
+div[data-testid="stRadio"] label,
+div[data-testid="stRadio"] label p,
+div[data-testid="stRadio"] label span,
+div[data-testid="stRadio"] div[role="radiogroup"] label p,
+div[data-testid="stRadio"] div[role="radiogroup"] label span {
+    color: #f3f4f6 !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    opacity: 1 !important;
+}
+
+div[data-testid="stRadio"] label:hover p {
+    color: #a5b4fc !important;
+}
+
+div[data-testid="stRadio"] label[aria-checked="true"] p,
+div[data-testid="stRadio"] label[data-checked="true"] p,
+div[data-testid="stRadio"] input:checked + div p {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    text-shadow: 0 0 10px rgba(129, 140, 248, 0.9) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Form Inputs, Selectboxes, Multiselects & Sliders                          */
+/* -------------------------------------------------------------------------- */
+label[data-testid="stWidgetLabel"],
+label[data-testid="stWidgetLabel"] p,
+label[data-testid="stWidgetLabel"] span {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 1.02rem !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* Selectbox input box container */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
+.stTextInput input,
+.stNumberInput input {
+    background-color: #1f2937 !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 10px !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] div {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* BASEWEB SELECTBOX POPUP MENUS (Fixes White-on-White Dropdown Bug)         */
+/* -------------------------------------------------------------------------- */
+body div[data-baseweb="popover"],
+body div[data-baseweb="menu"],
+div[data-baseweb="popover"] > div,
+div[data-baseweb="popover"] ul,
+div[data-baseweb="menu"] ul,
+ul[role="listbox"] {
+    background-color: #111827 !important;
+    background: #111827 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9) !important;
+}
+
+div[data-baseweb="popover"] li,
+div[data-baseweb="menu"] li,
+div[data-baseweb="popover"] [role="option"],
+div[data-baseweb="menu"] [role="option"],
+ul[role="listbox"] li,
+ul[role="listbox"] [role="option"] {
+    background-color: #111827 !important;
+    background: #111827 !important;
+    color: #f3f4f6 !important;
+    font-weight: 600 !important;
+    font-size: 0.98rem !important;
+    padding: 10px 16px !important;
+}
+
+div[data-baseweb="popover"] li:hover,
+div[data-baseweb="menu"] li:hover,
+div[data-baseweb="popover"] [role="option"]:hover,
+div[data-baseweb="menu"] [role="option"]:hover,
+ul[role="listbox"] li:hover,
+ul[role="listbox"] [role="option"]:hover {
+    background-color: #374151 !important;
+    background: #374151 !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+div[data-baseweb="popover"] [aria-selected="true"],
+div[data-baseweb="menu"] [aria-selected="true"],
+ul[role="listbox"] [aria-selected="true"] {
+    background-color: #4f46e5 !important;
+    background: #4f46e5 !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* TABLES & DATAFRAMES (Fixes White Table Background Bug)                     */
+/* -------------------------------------------------------------------------- */
+[data-testid="stTable"],
+[data-testid="stDataFrame"],
+.stDataFrame,
+div[data-testid="stDataFrame"] > div {
+    background-color: #111827 !important;
+    background: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    color: #f3f4f6 !important;
+}
+
+[data-testid="stTable"] table,
+.stDataFrame table {
+    background-color: #111827 !important;
+    color: #f3f4f6 !important;
+    width: 100% !important;
+}
+
+[data-testid="stTable"] th,
+table th,
+.stDataFrame th {
+    background-color: #1f2937 !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.95rem !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+    padding: 12px 16px !important;
+    text-align: left !important;
+}
+
+[data-testid="stTable"] td,
+table td,
+.stDataFrame td {
+    background-color: #111827 !important;
+    color: #f3f4f6 !important;
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 10px 16px !important;
+}
+
+[data-testid="stTable"] tr:nth-child(even) td,
+table tr:nth-child(even) td {
+    background-color: #1e293b !important;
+}
+
+[data-testid="stTable"] tr:hover td,
+table tr:hover td {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+/* Streamlit Tabs */
+button[data-baseweb="tab"] p {
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
+    font-size: 1.02rem !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] p {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
+/* Custom Cards & Containers */
 .glass-card {
-    background: rgba(17, 24, 39, 0.65);
+    background: rgba(17, 24, 39, 0.85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 16px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1rem;
@@ -64,32 +264,19 @@ header[data-testid="stHeader"] {
 
 .glass-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.25);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.35);
 }
 
-/* Hero Header */
 .hero-header {
-    background: linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%);
-    border: 1px solid rgba(129, 140, 248, 0.25);
+    background: linear-gradient(135deg, rgba(30, 27, 75, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(129, 140, 248, 0.35);
     border-radius: 20px;
     padding: 2.5rem 2rem;
     margin-bottom: 1.5rem;
     position: relative;
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-}
-
-.hero-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 350px;
-    height: 350px;
-    background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
-    border-radius: 50%;
-    pointer-events: none;
 }
 
 .hero-title {
@@ -103,46 +290,14 @@ header[data-testid="stHeader"] {
 }
 
 .hero-subtitle {
-    font-size: 1.1rem;
-    color: #9ca3af;
-    font-weight: 400;
+    font-size: 1.15rem !important;
+    color: #cbd5e1 !important;
+    font-weight: 500 !important;
 }
 
-/* Animated Live Badge */
-.live-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #34d399;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.75rem;
-}
-
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    background-color: #10b981;
-    border-radius: 50%;
-    box-shadow: 0 0 10px #10b981;
-    animation: pulse 1.8s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-
-/* Metric Cards */
 .stat-metric-card {
-    background: linear-gradient(145deg, rgba(26, 34, 52, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(145deg, rgba(26, 34, 52, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 14px;
     padding: 1.2rem;
     text-align: left;
@@ -150,95 +305,77 @@ header[data-testid="stHeader"] {
 }
 
 .stat-label {
-    font-size: 0.82rem;
-    color: #9ca3af;
+    font-size: 0.85rem !important;
+    color: #cbd5e1 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-weight: 600;
+    font-weight: 700 !important;
     margin-bottom: 0.4rem;
 }
 
 .stat-value {
     font-family: 'Outfit', sans-serif;
     font-size: 1.8rem;
-    font-weight: 700;
-    color: #f9fafb;
-}
-
-.stat-delta-positive {
-    color: #34d399;
-    font-size: 0.82rem;
-    font-weight: 600;
-    margin-top: 0.2rem;
+    font-weight: 800;
+    color: #ffffff;
 }
 
 /* Risk Badges */
 .risk-pill-high {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.3) 100%);
-    border: 1px solid #ef4444;
-    color: #fca5a5;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(185, 28, 28, 0.5) 100%);
+    border: 1.5px solid #ef4444;
+    color: #ffffff;
     padding: 6px 16px;
     border-radius: 8px;
     font-weight: 800;
     letter-spacing: 0.05em;
     display: inline-block;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
 }
 
 .risk-pill-medium {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(180, 83, 9, 0.3) 100%);
-    border: 1px solid #f59e0b;
-    color: #fde68a;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(180, 83, 9, 0.5) 100%);
+    border: 1.5px solid #f59e0b;
+    color: #ffffff;
     padding: 6px 16px;
     border-radius: 8px;
     font-weight: 800;
     letter-spacing: 0.05em;
     display: inline-block;
-    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
 }
 
 .risk-pill-low {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(4, 120, 87, 0.3) 100%);
-    border: 1px solid #10b981;
-    color: #a7f3d0;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(4, 120, 87, 0.5) 100%);
+    border: 1.5px solid #10b981;
+    color: #ffffff;
     padding: 6px 16px;
     border-radius: 8px;
     font-weight: 800;
     letter-spacing: 0.05em;
     display: inline-block;
-    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
 }
 
 /* Disclaimer Box */
 .disclaimer-box {
-    background: rgba(30, 20, 10, 0.7);
+    background: rgba(30, 20, 10, 0.85);
     border-left: 4px solid #f59e0b;
     border-radius: 8px;
     padding: 1rem 1.25rem;
-    font-size: 0.88rem;
-    color: #d1d5db;
+    font-size: 0.92rem;
+    color: #f3f4f6;
     margin-bottom: 1.5rem;
-    line-height: 1.55;
-}
-
-/* Sidebar styling */
-section[data-testid="stSidebar"] {
-    background-color: #0b0f19;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.stRadio > label {
-    font-weight: 600;
-    color: #d1d5db;
+    line-height: 1.6;
 }
 
 div.stButton > button {
     background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    color: white;
+    color: #ffffff !important;
     border: none;
     border-radius: 10px;
     padding: 0.6rem 1.5rem;
-    font-weight: 600;
+    font-weight: 700 !important;
     transition: all 0.2s ease;
     box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
 }
@@ -391,13 +528,13 @@ def sidebar_nav() -> str:
     st.sidebar.markdown(
         clean_html(f"""
         <div style="text-align: center; padding: 0.8rem 0;">
-            <div style="font-family: 'Outfit', sans-serif; font-size: 1.55rem; font-weight: 800; color: #f9fafb; letter-spacing: 0.02em;">
-                SURAKSHA <span style="color: #818cf8; background: linear-gradient(135deg, #818cf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span>
+            <div style="font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 900; color: #ffffff !important; letter-spacing: 0.03em; text-shadow: 0 0 12px rgba(255,255,255,0.4);">
+                SURAKSHA <span style="color: #c084fc; font-weight: 900; text-shadow: 0 0 14px #a855f7;">AI</span>
             </div>
             <div style="margin-top: 0.4rem; margin-bottom: 0.3rem;">
                 {logo_html}
             </div>
-            <div style="font-size: 0.78rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">
+            <div style="font-size: 0.85rem; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800;">
                 National Safety Intelligence
             </div>
         </div>
@@ -405,20 +542,29 @@ def sidebar_nav() -> str:
         unsafe_allow_html=True,
     )
     st.sidebar.divider()
+    logged_role = "Guest"
     if st.session_state.get("is_logged_in", False):
         user_display = st.session_state.get("logged_user", "User")
-        role_display = st.session_state.get("logged_role", "Citizen")
+        role_display = st.session_state.get("logged_role", "Citizen / Traveler")
+        logged_role = role_display
+        
+        badge_border = "#10b981"
+        badge_text_color = "#34d399"
+        if "Law Enforcement" in role_display or "Official" in role_display:
+            badge_border = "#ef4444"
+            badge_text_color = "#fca5a5"
+
         st.sidebar.markdown(
             clean_html(f"""
-            <div style="background: linear-gradient(145deg, rgba(16, 185, 129, 0.15) 0%, rgba(17, 24, 39, 0.95) 100%); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
-                <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 800; color: #34d399; margin-bottom: 0.2rem;">
+            <div style="background: linear-gradient(145deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid {badge_border}; border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 800; color: {badge_text_color}; margin-bottom: 0.2rem;">
                     👋 Welcome, {user_display}!
                 </div>
-                <div style="font-size: 0.72rem; color: #9ca3af; font-weight: 600;">
-                    🛡️ Role: <span style="color: #a7f3d0; font-weight: 700;">{role_display}</span>
+                <div style="font-size: 0.78rem; color: #e2e8f0; font-weight: 700;">
+                    🛡️ Role: <span style="color: #ffffff; font-weight: 800;">{role_display}</span>
                 </div>
-                <div style="font-size: 0.68rem; color: #10b981; margin-top: 0.25rem; font-weight: 600;">
-                    🟢 Logged In | Suraksha AI
+                <div style="font-size: 0.72rem; color: #34d399; margin-top: 0.25rem; font-weight: 700;">
+                    🟢 Authenticated Workspace
                 </div>
             </div>
             """),
@@ -431,40 +577,49 @@ def sidebar_nav() -> str:
             st.toast("Logged out of SURAKSHA AI", icon="🚪")
             st.rerun()
         st.sidebar.divider()
-    page = st.sidebar.radio(
-        "Navigation",
-        [
-            "🏠 Home",
+
+    if "Law Enforcement" in logged_role or "Official" in logged_role:
+        nav_options = [
+            "🏠 Home (Command Desk)",
+            "🚨 Police Patrol & Station Directory",
+            "🗺️ GIS Vulnerability Heatmap",
+            "🧠 AI Risk Simulator",
+            "📊 District Ranking Leaderboard",
+        ]
+    else:
+        nav_options = [
+            "🏠 Home (Citizen Safety)",
             "🛣️ Safe Route Navigator",
             "🚨 Nearby Police Stations",
             "📍 City & District Explorer",
             "🧠 AI Risk Simulator",
             "🗺️ India GIS Risk Map",
             "📊 District Ranking Leaderboard",
-        ],
-    )
+        ]
+
+    page = st.sidebar.radio("Navigation", nav_options)
 
     st.sidebar.divider()
     # Native Streamlit Top-Level Emergency Helplines (100% dialer compatibility on all browsers & phones!)
     st.sidebar.markdown(
         """
-        <div style="background: linear-gradient(160deg, rgba(239, 68, 68, 0.18) 0%, rgba(17, 24, 39, 0.96) 40%, rgba(10, 14, 26, 0.98) 100%); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 0.95rem; margin-bottom: 0.8rem; box-shadow: 0 10px 28px -6px rgba(239, 68, 68, 0.25);">
-            <div style="font-family: 'Outfit', sans-serif; font-size: 0.84rem; font-weight: 800; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
-                <span>🚨 Emergency Helplines</span>
-                <span style="font-size: 0.65rem; color: #9ca3af; font-weight: 600;">TAP TO CALL</span>
+        <div style="background: linear-gradient(160deg, rgba(239, 68, 68, 0.25) 0%, rgba(17, 24, 39, 0.98) 40%, rgba(10, 14, 26, 0.98) 100%); border: 1.5px solid rgba(239, 68, 68, 0.55); border-radius: 14px; padding: 0.95rem; margin-bottom: 0.8rem; box-shadow: 0 10px 28px -6px rgba(239, 68, 68, 0.35);">
+            <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 900; color: #ff8a8a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+                <span style="color: #ffffff !important; font-weight: 900;">🚨 Emergency Helplines</span>
+                <span style="font-size: 0.7rem; color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.2); padding: 2px 7px; border-radius: 4px;">TAP TO CALL</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem;">
-                <a href="tel:1091" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
-                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">1091</span>
-                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">Women</span>
+                <a href="tel:1091" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">1091</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">Women</span>
                 </a>
-                <a href="tel:181" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
-                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">181</span>
-                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">Distress</span>
+                <a href="tel:181" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">181</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">Distress</span>
                 </a>
-                <a href="tel:112" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
-                    <span style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 800; color: #ffffff;">112</span>
-                    <span style="font-size: 0.64rem; color: #fca5a5; font-weight: 600; margin-top: 2px;">National</span>
+                <a href="tel:112" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
+                    <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">112</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">National</span>
                 </a>
             </div>
         </div>
@@ -700,25 +855,6 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             placeholder="e.g. Shravanabelagola, Mysuru, Udupi, Sedam, 573135...",
             key="dest_search_input"
         )
-        preset_route = st.selectbox(
-            "⚡ Quick Select Benchmark Routes:",
-            [
-                "-- Select Benchmark Route --",
-                "Hassan ➔ Shravanabelagola",
-                "Bengaluru ➔ Hassan",
-                "Mysuru ➔ Shravanabelagola",
-                "Mangaluru ➔ Udupi",
-                "Shivamogga ➔ Agumbe",
-                "Kalaburagi ➔ Sedam",
-                "Belagavi ➔ Gokak"
-            ],
-            key="benchmark_route_picker"
-        )
-        if preset_route != "-- Select Benchmark Route --":
-            parts = preset_route.split(" ➔ ")
-            origin_query = parts[0]
-            dest_query = parts[1]
-            origin_mode = "🔍 Search Village / Address / PIN Code"
 
     st.markdown("<br>", unsafe_allow_html=True)
     calc_btn = st.button("🚀 COMPUTE ACCURATE DISTANCE & SAFE VS UNSAFE ROUTES", use_container_width=True)
@@ -894,7 +1030,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         with st.expander("📋 View Complete In-App Turn-by-Turn Navigation Guide"):
             df_steps = pd.DataFrame(steps)[["step_num", "icon", "action", "name", "distance_str", "safety_note"]]
             df_steps.columns = ["Step #", "Turn Icon", "Maneuver / Action", "Road Name", "Distance", "Corridor Safety Status"]
-            st.dataframe(df_steps, use_container_width=True, hide_index=True)
+            st.table(df_steps)
 
     # Native In-App Emergency & SOS Bar
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1155,6 +1291,8 @@ def page_home(df: pd.DataFrame | None):
         unsafe_allow_html=True,
     )
 
+
+
     # Interactive SOS Drawer / Modal Panel
     if st.session_state.show_sos:
         st.markdown(
@@ -1232,34 +1370,64 @@ def page_home(df: pd.DataFrame | None):
         else:
             st.markdown(
                 """
-                <div class="glass-card" style="border-left: 6px solid #818cf8; background: linear-gradient(135deg, rgba(30, 27, 75, 0.7) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
-                    <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 800; color: #c7d2fe;">
-                        👤 USER LOGIN / REGISTER
+                <div class="glass-card" style="border-left: 6px solid #818cf8; background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: #ffffff;">
+                        🔐 SURAKSHA AI USER AUTHENTICATION
+                    </div>
+                    <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.2rem;">
+                        Create a new account or log in to your existing account. All accounts are saved for future logins.
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            with st.form("login_form"):
-                full_name = st.text_input("Full Name", placeholder="e.g. Varshini")
-                role = st.selectbox("Role", ["Citizen / Traveler", "Safety Researcher / Analyst", "Law Enforcement / Official"])
-                user_input = st.text_input("Mobile / Email", placeholder="e.g. user@example.com")
-                pass_input = st.text_input("Password", type="password", placeholder="••••••••")
-                submit_login = st.form_submit_button("🔓 Login")
-                
-            if submit_login:
-                display_name = full_name.strip() or user_input.strip()
-                if display_name:
-                    st.session_state.is_logged_in = True
-                    st.session_state.logged_user = display_name
-                    st.session_state.logged_role = role
-                    st.session_state.show_login = False
-                    st.toast(f"Logged in as {display_name}!", icon="🎉")
-                    st.rerun()
-                else:
-                    st.warning("Please enter your name, email, or mobile number.")
+            
+            tab_login, tab_register = st.tabs(["🔑 Login to Account", "📝 Create New Account"])
+            
+            with tab_login:
+                with st.form("form_login_authenticated"):
+                    login_user_id = st.text_input("Mobile / Email", placeholder="e.g. varshini@gmail.com or 9876543210", key="login_id_in")
+                    login_password = st.text_input("Password", type="password", placeholder="••••••••", key="login_pass_in")
+                    submit_login = st.form_submit_button("🔓 Login", use_container_width=True)
 
-        if st.button("✖ Close Login", key="close_login_btn"):
+                if submit_login:
+                    success, user_info_or_error = auth.authenticate_user(login_user_id, login_password)
+                    if success:
+                        user_info = user_info_or_error
+                        st.session_state.is_logged_in = True
+                        st.session_state.logged_user = user_info["name"]
+                        st.session_state.logged_role = user_info.get("role", "Citizen / Traveler")
+                        st.session_state.show_login = False
+                        st.toast(f"Welcome back, {user_info['name']}!", icon="🎉")
+                        st.rerun()
+                    else:
+                        st.error(user_info_or_error)
+
+            with tab_register:
+                with st.form("form_register_account"):
+                    reg_full_name = st.text_input("Full Name", placeholder="e.g. Varshini", key="reg_name_in")
+                    reg_role = st.selectbox("Select Role", ["Citizen / Traveler", "Law Enforcement / Official"], key="reg_role_in")
+                    reg_user_id = st.text_input("Mobile / Email", placeholder="e.g. varshini@gmail.com or 9876543210", key="reg_id_in")
+                    reg_password = st.text_input("Create Password", type="password", placeholder="••••••••", key="reg_pass_in")
+                    reg_confirm_pass = st.text_input("Confirm Password", type="password", placeholder="••••••••", key="reg_pass_confirm_in")
+                    submit_register = st.form_submit_button("✨ Create Account & Login", use_container_width=True)
+
+                if submit_register:
+                    if reg_password.strip() != reg_confirm_pass.strip():
+                        st.error("❌ Passwords do not match. Please re-enter your password.")
+                    else:
+                        reg_success, reg_msg = auth.register_user(reg_full_name, reg_role, reg_user_id, reg_password)
+                        if reg_success:
+                            st.session_state.is_logged_in = True
+                            st.session_state.logged_user = reg_full_name.strip()
+                            st.session_state.logged_role = reg_role
+                            st.session_state.show_login = False
+                            st.toast(f"Account created! Welcome, {reg_full_name.strip()}!", icon="🎉")
+                            st.rerun()
+                        else:
+                            st.error(reg_msg)
+
+        if st.button("✖ Close Authentication Drawer", key="close_login_btn"):
             st.session_state.show_login = False
             st.rerun()
 
@@ -1391,7 +1559,7 @@ def page_home(df: pd.DataFrame | None):
 
     # Instant City Safety Quick Lookup Widget
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-    st.markdown("### 🔍 Quick Safety Search")
+    st.markdown("<h3 style='color: #ffffff !important; font-weight: 800; font-size: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.8rem;'>🔍 Quick Safety Search</h3>", unsafe_allow_html=True)
     if df is not None:
         quick_c1, quick_c2 = st.columns([3, 1])
         with quick_c1:
@@ -1700,9 +1868,12 @@ def page_city_analysis(df: pd.DataFrame | None):
 def page_risk_prediction(df: pd.DataFrame | None, artifacts):
     st.markdown(
         """
-        <div class="hero-header">
-            <div class="hero-title">🧠 AI Risk Simulator</div>
-            <div class="hero-subtitle">Input custom features or load historical city data to compute deep neural network risk probabilities.</div>
+        <div class="hero-header" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(30, 27, 75, 0.85) 100%); border: 1px solid rgba(168, 85, 247, 0.35);">
+            <div style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
+                🧠 DEEP NEURAL NETWORK SIMULATOR
+            </div>
+            <div class="hero-title" style="color: #ffffff;">🧠 AI Risk Simulator</div>
+            <div class="hero-subtitle">Select any Indian City or District and Target Projection Year to run deep neural network risk classification and view probability distributions.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1715,57 +1886,58 @@ def page_risk_prediction(df: pd.DataFrame | None, artifacts):
 
     feature_names = artifacts["feature_names"]
     values = {}
+    city = "Hassan"
+    year = 2026
 
     if df is not None:
-        use_history = st.checkbox("Pre-fill from historical dataset (2001–2026)", value=True)
-        if use_history:
-            c1, c2 = st.columns(2)
-            with c1:
-                city = st.selectbox("Select City / District", sorted(df["city"].dropna().unique()), key="pred_city")
-            years = sorted(df[df["city"] == city]["year"].dropna().unique())
-            with c2:
-                year = st.selectbox("Select Target Year", years, index=len(years) - 1, key="pred_year")
-            
-            row = df[(df["city"] == city) & (df["year"] == year)]
-            if not row.empty:
-                for f in feature_names:
-                    if f in row.columns:
-                        values[f] = float(row.iloc[0][f]) if pd.notna(row.iloc[0][f]) else None
+        c1, c2 = st.columns(2)
+        with c1:
+            city = st.selectbox("📍 Select City / District:", sorted(df["city"].dropna().unique()), key="pred_city")
+        years = sorted(df[df["city"] == city]["year"].dropna().unique())
+        with c2:
+            year = st.selectbox("📅 Select Target Year:", years, index=len(years) - 1, key="pred_year")
+        
+        row = df[(df["city"] == city) & (df["year"] == year)]
+        if not row.empty:
+            for f in feature_names:
+                if f in row.columns:
+                    values[f] = float(row.iloc[0][f]) if pd.notna(row.iloc[0][f]) else 0.0
 
-    st.markdown("### 🎛️ Input Feature Parameters")
-    with st.form("manual_features"):
-        cols = st.columns(2)
-        for i, f in enumerate(feature_names):
-            default = values.get(f)
-            values[f] = cols[i % 2].number_input(
-                f"Feature: {f}",
-                value=float(default) if default is not None else 0.0,
-                format="%.4f",
-            )
-        submitted = st.form_submit_button("🔮 Predict Risk Tier with Deep Learning")
+    st.markdown("<br>", unsafe_allow_html=True)
+    run_sim_btn = st.button("🔮 RUN AI RISK PREDICTION FOR SELECTED LOCATION", use_container_width=True)
 
-    if submitted:
-        result = predict.predict_risk(values, artifacts)
-        risk = result["predicted_risk"]
-        pill_class = "risk-pill-high" if risk == "HIGH" else ("risk-pill-medium" if risk == "MEDIUM" else "risk-pill-low")
+    if run_sim_btn or "sim_run_active" in st.session_state:
+        st.session_state["sim_run_active"] = True
+        
+        with st.spinner("🧠 Evaluating multi-layer deep neural network risk probabilities..."):
+            result = predict.predict_risk(values, artifacts)
+            risk = result["predicted_risk"]
+            pill_class = "risk-pill-high" if risk == "HIGH" else ("risk-pill-medium" if risk == "MEDIUM" else "risk-pill-low")
 
         st.markdown(
             f"""
-            <div style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 16px; margin-top: 1rem;">
-                <div style="font-size: 1.1rem; color: #9ca3af;">Deep Neural Network Output</div>
-                <div style="display: flex; gap: 15px; align-items: center; margin-top: 0.5rem;">
-                    <div class="{pill_class}" style="font-size: 1.4rem;">PREDICTED TIER: {risk}</div>
-                    <div style="font-size: 1.1rem; color: #e5e7eb;">Confidence: <b>{result['model_confidence']:.1%}</b></div>
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid rgba(168, 85, 247, 0.4); padding: 1.5rem; border-radius: 16px; margin-top: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <div style="font-size: 0.85rem; font-weight: 800; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+                    🤖 DEEP NEURAL NETWORK PREDICTION RESULT
+                </div>
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div class="{pill_class}" style="font-size: 1.5rem; padding: 10px 22px;">PREDICTED RISK TIER: {risk}</div>
+                    <div style="font-size: 1.2rem; color: #ffffff; font-weight: 700;">
+                        Model Confidence: <span style="color: #34d399; font-weight: 900;">{result['model_confidence']:.1%}</span>
+                    </div>
+                </div>
+                <div style="margin-top: 0.8rem; font-size: 0.95rem; color: #e2e8f0;">
+                    📍 Target Location: <b>{city}</b> | 📅 Projection Year: <b>{year}</b>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
         
-        st.markdown("#### Class Probability Distribution")
+        st.markdown("<h4 style='color: #ffffff; margin-top: 1.5rem;'>📊 Class Probability Distribution</h4>", unsafe_allow_html=True)
         prob_df = pd.DataFrame({
             "Risk Class": list(result["class_probabilities"].keys()),
-            "Probability": list(result["class_probabilities"].values())
+            "Probability (%)": [v * 100.0 for v in result["class_probabilities"].values()]
         })
         st.bar_chart(prob_df.set_index("Risk Class"))
 
@@ -1860,16 +2032,7 @@ def page_district_matrix(df: pd.DataFrame | None):
     
     view_df = df_year[[c for c in display_cols if c in df_year.columns]].rename(columns=rename_dict)
     
-    st.dataframe(
-        view_df,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Crime Rate (per 100k)": st.column_config.NumberColumn(format="%.2f"),
-            "Total Reported Cases": st.column_config.NumberColumn(format="%d"),
-            "Population": st.column_config.NumberColumn(format="%d"),
-        }
-    )
+    st.table(view_df)
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -2915,16 +3078,10 @@ def page_police_stations(df_police: pd.DataFrame | None):
 
     # Optional Expander if user ever wants to view full table
     with st.expander("📋 View Full Police Station Directory & Distance Table"):
-        display_df = filtered_df[["station_name", "distance_km", "station_type", "city", "phone", "address", "jurisdiction_areas"]].copy()
-        display_df.columns = ["Police Station", "Distance (km)", "Category", "City / District", "Contact Phone", "Address", "Jurisdiction Coverage"]
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Distance (km)": st.column_config.NumberColumn(format="%.2f km"),
-            }
-        )
+        display_df = filtered_df[["station_name", "distance_km", "station_type", "city", "phone", "address"]].copy()
+        display_df["distance_km"] = display_df["distance_km"].apply(lambda d: f"{d:.2f} km")
+        display_df.columns = ["Police Station", "Distance (km)", "Category", "City / District", "Contact Phone", "Address"]
+        st.table(display_df)
 
 
 def geocode_osm_india(location_query: str):
@@ -3228,26 +3385,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             "Destination Location (Type Village, Town, or 6-Digit PIN Code):",
             value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
             placeholder="e.g. Shravanabelagola, Mysuru, Udupi, 573135...",
-            key="dest_search_input_single"
         )
-        preset_route = st.selectbox(
-            "⚡ Quick Benchmark Routes:",
-            [
-                "-- Select Benchmark Route --",
-                "Hassan ➔ Shravanabelagola",
-                "Bengaluru ➔ Hassan",
-                "Mysuru ➔ Shravanabelagola",
-                "Mangaluru ➔ Udupi",
-                "Shivamogga ➔ Agumbe",
-                "Kalaburagi ➔ Sedam",
-                "Belagavi ➔ Gokak"
-            ],
-            key="benchmark_route_picker"
-        )
-        if preset_route != "-- Select Benchmark Route --":
-            parts = preset_route.split(" ➔ ")
-            origin_query = parts[0]
-            dest_query = parts[1]
 
     # Women's Safety Environmental Filters
     st.markdown("<br>", unsafe_allow_html=True)
@@ -3515,7 +3653,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         with st.expander(table_title):
             df_steps = pd.DataFrame(steps)[["step_num", "icon", "action", "name", "distance_str", "safety_note"]]
             df_steps.columns = ["Step #", "Turn Icon", "Maneuver / Action", "Road Name", "Distance", "Corridor Safety Status"]
-            st.dataframe(df_steps, use_container_width=True, hide_index=True)
+            st.table(df_steps)
 
     # Native In-App Emergency & SOS Bar + Google Maps Redirect Controls
     gmaps_safe_url = f"https://www.google.com/maps/dir/?api=1&origin={orig_lat},{orig_lon}&destination={dest_lat},{dest_lon}&travelmode=driving"
@@ -3551,19 +3689,19 @@ def main():
     df_police = load_police_stations_dataset()
     page = sidebar_nav()
 
-    if page == "🏠 Home":
+    if "Home" in page:
         page_home(df)
-    elif page == "🛣️ Safe Route Navigator":
+    elif "Safe Route" in page:
         page_safe_routes(df, df_police)
-    elif page == "🚨 Nearby Police Stations":
+    elif "Police Stations" in page:
         page_police_stations(df_police)
-    elif page == "📍 City & District Explorer":
+    elif "City & District Explorer" in page:
         page_city_analysis(df)
-    elif page == "🧠 AI Risk Simulator":
+    elif "AI Risk Simulator" in page:
         page_risk_prediction(df, artifacts)
-    elif page == "🗺️ India GIS Risk Map":
+    elif "GIS" in page:
         page_india_map(df)
-    elif page == "📊 District Ranking Leaderboard":
+    elif "Leaderboard" in page:
         page_district_matrix(df)
 
 
