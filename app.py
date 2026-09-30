@@ -542,26 +542,14 @@ def sidebar_nav() -> str:
         unsafe_allow_html=True,
     )
     st.sidebar.divider()
-    logged_role = "Guest"
     if st.session_state.get("is_logged_in", False):
         user_display = st.session_state.get("logged_user", "User")
-        role_display = st.session_state.get("logged_role", "Citizen / Traveler")
-        logged_role = role_display
-        
-        badge_border = "#10b981"
-        badge_text_color = "#34d399"
-        if "Law Enforcement" in role_display or "Official" in role_display:
-            badge_border = "#ef4444"
-            badge_text_color = "#fca5a5"
 
         st.sidebar.markdown(
             clean_html(f"""
-            <div style="background: linear-gradient(145deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid {badge_border}; border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
-                <div style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 800; color: {badge_text_color}; margin-bottom: 0.2rem;">
+            <div style="background: linear-gradient(145deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid #10b981; border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 800; color: #34d399; margin-bottom: 0.2rem;">
                     👋 Welcome, {user_display}!
-                </div>
-                <div style="font-size: 0.78rem; color: #e2e8f0; font-weight: 700;">
-                    🛡️ Role: <span style="color: #ffffff; font-weight: 800;">{role_display}</span>
                 </div>
                 <div style="font-size: 0.72rem; color: #34d399; margin-top: 0.25rem; font-weight: 700;">
                     🟢 Authenticated Workspace
@@ -578,24 +566,15 @@ def sidebar_nav() -> str:
             st.rerun()
         st.sidebar.divider()
 
-    if "Law Enforcement" in logged_role or "Official" in logged_role:
-        nav_options = [
-            "🏠 Home (Command Desk)",
-            "🚨 Police Patrol & Station Directory",
-            "🗺️ GIS Vulnerability Heatmap",
-            "🧠 AI Risk Simulator",
-            "📊 District Ranking Leaderboard",
-        ]
-    else:
-        nav_options = [
-            "🏠 Home (Citizen Safety)",
-            "🛣️ Safe Route Navigator",
-            "🚨 Nearby Police Stations",
-            "📍 City & District Explorer",
-            "🧠 AI Risk Simulator",
-            "🗺️ India GIS Risk Map",
-            "📊 District Ranking Leaderboard",
-        ]
+    nav_options = [
+        "🏠 Home",
+        "🛣️ Safe Route Navigator",
+        "🚨 Nearby Police Stations",
+        "📍 City & District Explorer",
+        "🧠 AI Risk Simulator",
+        "🗺️ India GIS Risk Map",
+        "📊 District Ranking Leaderboard",
+    ]
 
     page = st.sidebar.radio("Navigation", nav_options)
 
@@ -1354,7 +1333,7 @@ def page_home(df: pd.DataFrame | None):
                 f"""
                 <div class="glass-card" style="border-left: 6px solid #34d399; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
                     <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 800; color: #a7f3d0;">
-                        ✅ LOGGED IN AS: {st.session_state.logged_user} ({st.session_state.logged_role})
+                        ✅ LOGGED IN AS: {st.session_state.logged_user}
                     </div>
                 </div>
                 """,
@@ -1396,7 +1375,7 @@ def page_home(df: pd.DataFrame | None):
                         user_info = user_info_or_error
                         st.session_state.is_logged_in = True
                         st.session_state.logged_user = user_info["name"]
-                        st.session_state.logged_role = user_info.get("role", "Citizen / Traveler")
+                        st.session_state.logged_role = user_info.get("role", "User")
                         st.session_state.show_login = False
                         st.toast(f"Welcome back, {user_info['name']}!", icon="🎉")
                         st.rerun()
@@ -1406,7 +1385,6 @@ def page_home(df: pd.DataFrame | None):
             with tab_register:
                 with st.form("form_register_account"):
                     reg_full_name = st.text_input("Full Name", placeholder="e.g. Varshini", key="reg_name_in")
-                    reg_role = st.selectbox("Select Role", ["Citizen / Traveler", "Law Enforcement / Official"], key="reg_role_in")
                     reg_user_id = st.text_input("Mobile / Email", placeholder="e.g. varshini@gmail.com or 9876543210", key="reg_id_in")
                     reg_password = st.text_input("Create Password", type="password", placeholder="••••••••", key="reg_pass_in")
                     reg_confirm_pass = st.text_input("Confirm Password", type="password", placeholder="••••••••", key="reg_pass_confirm_in")
@@ -1416,11 +1394,11 @@ def page_home(df: pd.DataFrame | None):
                     if reg_password.strip() != reg_confirm_pass.strip():
                         st.error("❌ Passwords do not match. Please re-enter your password.")
                     else:
-                        reg_success, reg_msg = auth.register_user(reg_full_name, reg_role, reg_user_id, reg_password)
+                        reg_success, reg_msg = auth.register_user(reg_full_name, "User", reg_user_id, reg_password)
                         if reg_success:
                             st.session_state.is_logged_in = True
                             st.session_state.logged_user = reg_full_name.strip()
-                            st.session_state.logged_role = reg_role
+                            st.session_state.logged_role = "User"
                             st.session_state.show_login = False
                             st.toast(f"Account created! Welcome, {reg_full_name.strip()}!", icon="🎉")
                             st.rerun()
