@@ -12,6 +12,7 @@ import urllib.parse
 import urllib.request
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 try:
     import folium
     from streamlit_folium import st_folium
@@ -3069,9 +3070,43 @@ def page_police_stations(df_police: pd.DataFrame | None):
     # Optional Expander if user ever wants to view full table
     with st.expander("📋 View Full Police Station Directory & Distance Table"):
         display_df = filtered_df[["station_name", "distance_km", "station_type", "city", "phone", "address"]].copy()
-        display_df["distance_km"] = display_df["distance_km"].apply(lambda d: f"{d:.2f} km")
-        display_df.columns = ["Police Station", "Distance (km)", "Category", "City / District", "Contact Phone", "Address"]
         st.table(display_df)
+
+
+def get_device_current_location():
+    """Detects current user location using IP geolocation services with fallback to Karnataka center."""
+    services = [
+        ("http://ip-api.com/json", lambda d: (float(d["lat"]), float(d["lon"]), f"{d.get('city', 'Current Location')}, {d.get('regionName', '')}")),
+        ("https://ipwho.is/", lambda d: (float(d["latitude"]), float(d["longitude"]), f"{d.get('city', 'Current Location')}, {d.get('region', '')}")),
+        ("https://freeipapi.com/api/json", lambda d: (float(d["latitude"]), float(d["longitude"]), f"{d.get('cityName', 'Current Location')}, {d.get('regionName', '')}"))
+    ]
+    for url, parser in services:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "SurakshaAI/1.0"})
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if data.get("status") == "success" or data.get("success", True):
+                    return parser(data)
+        except Exception:
+            continue
+    return 12.9716, 77.5946, "Bengaluru, Karnataka"
+
+
+def reverse_geocode_osm(lat: float, lon: float) -> str:
+    """Reverse geocodes latitude and longitude into human-readable place description."""
+    try:
+        url = f"https://nominatim.openstreetmap.org/reverse?lat={lat:.5f}&lon={lon:.5f}&format=json"
+        req = urllib.request.Request(url, headers={"User-Agent": "SurakshaAI-ReverseGeocoder/1.0"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            if data and "display_name" in data:
+                parts = [p.strip() for p in data["display_name"].split(",")]
+                if len(parts) > 3:
+                    return f"{parts[0]}, {parts[1]}, {parts[-3]}"
+                return data["display_name"]
+    except Exception:
+        pass
+    return f"Live GPS Position ({lat:.4f}, {lon:.4f})"
 
 
 def geocode_osm_india(location_query: str):
@@ -3361,13 +3396,108 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
 
     with col1:
         st.markdown("<h4 style='color: #10b981; margin-bottom: 0.3rem;'>🟢 1. Origin Location</h4>", unsafe_allow_html=True)
-        origin_query = st.text_input(
-            "Origin Location (Type Village, Town, or 6-Digit PIN Code):",
-            value=st.session_state.get("safe_route_origin", "Hassan"),
-            placeholder="e.g. Hassan, Hirisave, Sosale, 573201...",
-            key="origin_search_input_single"
+
+        origin_mode = st.radio(
+            "Select Origin Input Type:",
+            ["📍 Type Place / Village / PIN Code", "📡 Use Current / Live Location"],
+            horizontal=True,
+            key="origin_mode_choice_radio"
         )
-        live_origin_coords = None
+
+        if origin_mode == "📍 Type Place / Village / PIN Code":
+            origin_query = st.text_input(
+                "Origin Location (Type Village, Town, or 6-Digit PIN Code):",
+                value=st.session_state.get("safe_route_origin", "Hassan"),
+                placeholder="e.g. Hassan, Hirisave, Sosale, 573201...",
+                key="origin_search_input_single"
+            )
+            live_origin_coords = None
+        else:
+            # Check if query params has live GPS from phone/browser
+            qp = st.query_params
+            if "live_lat" in qp and "live_lon" in qp:
+                try:
+                    st.session_state["curr_live_lat"] = float(qp["live_lat"])
+                    st.session_state["curr_live_lon"] = float(qp["live_lon"])
+                    st.session_state["curr_live_addr"] = reverse_geocode_osm(st.session_state["curr_live_lat"], st.session_state["curr_live_lon"])
+                except Exception:
+                    pass
+
+            if "curr_live_lat" not in st.session_state:
+                with st.spinner("🛰️ Detecting current GPS / network location..."):
+                    d_lat, d_lon, d_addr = get_device_current_location()
+                    st.session_state["curr_live_lat"] = d_lat
+                    st.session_state["curr_live_lon"] = d_lon
+                    st.session_state["curr_live_addr"] = d_addr
+
+            c_lat = float(st.session_state["curr_live_lat"])
+            c_lon = float(st.session_state["curr_live_lon"])
+            c_addr = st.session_state.get("curr_live_addr", f"Live Location ({c_lat:.4f}, {c_lon:.4f})")
+
+            st.markdown(
+                f"""
+                <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; border-radius: 12px; padding: 0.85rem 1rem; margin-top: 0.3rem; margin-bottom: 0.6rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.74rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">🟢 CURRENT LOCATION LOCKED</span>
+                        <span style="font-size: 0.72rem; color: #a7f3d0; background: rgba(16, 185, 129, 0.25); padding: 2px 7px; border-radius: 4px; font-weight: 700;">ACCURATE GPS</span>
+                    </div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin: 4px 0;">📍 {c_addr}</div>
+                    <div style="font-size: 0.8rem; color: #9ca3af;">Coordinates: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            btn_c1, btn_c2 = st.columns([1, 1])
+            with btn_c1:
+                if st.button("🔄 Auto-Detect / Refresh", key="refresh_current_loc_btn", use_container_width=True):
+                    d_lat, d_lon, d_addr = get_device_current_location()
+                    st.session_state["curr_live_lat"] = d_lat
+                    st.session_state["curr_live_lon"] = d_lon
+                    st.session_state["curr_live_addr"] = reverse_geocode_osm(d_lat, d_lon)
+                    st.rerun()
+            with btn_c2:
+                components.html(
+                    """
+                    <button onclick="requestGPS()" style="width:100%; height:38px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">
+                        🛰️ Use Device Sensor GPS
+                    </button>
+                    <script>
+                    function requestGPS() {
+                        if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(function(pos) {
+                                const lat = pos.coords.latitude.toFixed(5);
+                                const lon = pos.coords.longitude.toFixed(5);
+                                const u = new URL(window.parent.location.href);
+                                u.searchParams.set('live_lat', lat);
+                                u.searchParams.set('live_lon', lon);
+                                window.parent.location.href = u.href;
+                            }, function(err) {
+                                alert('Could not access device GPS (' + err.message + '). Using network location.');
+                            }, { enableHighAccuracy: true, timeout: 8000 });
+                        } else {
+                            alert('Geolocation not supported in this browser.');
+                        }
+                    }
+                    </script>
+                    """,
+                    height=42
+                )
+
+            with st.expander("🛠️ Manual Coordinate Override (Optional)", expanded=False):
+                adj_col1, adj_col2 = st.columns(2)
+                with adj_col1:
+                    manual_lat = st.number_input("Latitude (° N):", value=c_lat, format="%.5f", key="man_lat_in")
+                with adj_col2:
+                    manual_lon = st.number_input("Longitude (° E):", value=c_lon, format="%.5f", key="man_lon_in")
+                if manual_lat != c_lat or manual_lon != c_lon:
+                    st.session_state["curr_live_lat"] = manual_lat
+                    st.session_state["curr_live_lon"] = manual_lon
+                    c_lat = manual_lat
+                    c_lon = manual_lon
+
+            live_origin_coords = (c_lat, c_lon)
+            origin_query = f"Current Location ({c_addr})"
 
     with col2:
         st.markdown("<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>🔴 2. Destination Location</h4>", unsafe_allow_html=True)
@@ -3418,7 +3548,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         # Resolve Origin
         if live_origin_coords:
             orig_lat, orig_lon = live_origin_coords
-            orig_label = f"Live GPS ({orig_lat:.4f}, {orig_lon:.4f})"
+            orig_label = f"🟢 Current Location ({orig_lat:.4f}, {orig_lon:.4f})"
         else:
             orig_res = geocode_osm_india(origin_query)
             if not orig_res:
