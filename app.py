@@ -3506,78 +3506,8 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                     st.session_state.pop("isp_mismatch_warning", None)
                     st.rerun()
 
-            # 1-Click Fast Presets for Hassan Localities
-            st.markdown("<div style='font-size:0.8rem; color:#a7f3d0; font-weight:700; margin-top:0.4rem; margin-bottom:0.25rem;'>⚡ Quick Pick Locality in Hassan:</div>", unsafe_allow_html=True)
-            qp1, qp2, qp3 = st.columns(3)
-            with qp1:
-                if st.button("📍 Hassan Center", key="btn_hassan_center", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.0068
-                    st.session_state["exact_gps_lon"] = 76.1038
-                    st.session_state["exact_gps_addr"] = "Hassan City Center"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 Kuvempu Nagar", key="btn_kuvempu_nagar", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.0150
-                    st.session_state["exact_gps_lon"] = 76.1150
-                    st.session_state["exact_gps_addr"] = "Kuvempu Nagar, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 BM Road / Bus Stand", key="btn_bm_road", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.0089
-                    st.session_state["exact_gps_lon"] = 76.1012
-                    st.session_state["exact_gps_addr"] = "BM Road / Bus Stand, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-            with qp2:
-                if st.button("📍 MCE College", key="btn_mce_college", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.0125
-                    st.session_state["exact_gps_lon"] = 76.1010
-                    st.session_state["exact_gps_addr"] = "Malnad College of Engineering (MCE), Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 Vidya Nagar", key="btn_vidya_nagar", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.0180
-                    st.session_state["exact_gps_lon"] = 76.1180
-                    st.session_state["exact_gps_addr"] = "Vidya Nagar, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 Gorur Dam", key="btn_gorur", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 12.8789
-                    st.session_state["exact_gps_lon"] = 76.0489
-                    st.session_state["exact_gps_addr"] = "Gorur Dam, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-            with qp3:
-                if st.button("📍 Belur", key="btn_belur", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 13.1612
-                    st.session_state["exact_gps_lon"] = 75.8612
-                    st.session_state["exact_gps_addr"] = "Belur, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 Sakleshpur", key="btn_sakleshpur", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 12.9412
-                    st.session_state["exact_gps_lon"] = 75.7889
-                    st.session_state["exact_gps_addr"] = "Sakleshpur, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-                if st.button("📍 Channarayapatna", key="btn_cr_patna", use_container_width=True):
-                    st.session_state["exact_gps_lat"] = 12.9012
-                    st.session_state["exact_gps_lon"] = 76.3889
-                    st.session_state["exact_gps_addr"] = "Channarayapatna, Hassan"
-                    st.session_state["exact_gps_acc"] = 5.0
-                    st.session_state.pop("isp_mismatch_warning", None)
-                    st.rerun()
-
             # Search bar for any custom area, village, or PIN code
-            st.markdown("<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>🔍 Or type your exact locality, village, or PIN code in Hassan/Karnataka:</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>🔍 Or type your exact locality, village, or PIN code:</div>", unsafe_allow_html=True)
             search_col1, search_col2 = st.columns([3, 1])
             with search_col1:
                 cur_area_search = st.text_input("Enter your current locality / village:", placeholder="e.g. Kuvempu Nagar, Dudda, Shantigrama, 573201...", key="search_curr_area_pin", label_visibility="collapsed")
