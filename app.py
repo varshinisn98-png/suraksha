@@ -12,9 +12,19 @@ import urllib.parse
 import urllib.request
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
-import folium
-from streamlit_folium import st_folium
+try:
+    import folium
+    from streamlit_folium import st_folium
+except ImportError:
+    import subprocess
+    import sys
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "folium>=0.15", "streamlit-folium>=0.20"])
+        import folium
+        from streamlit_folium import st_folium
+    except Exception:
+        folium = None
+        st_folium = None
 
 from src import config, data_loader, predict, visualization, auth
 
@@ -1938,27 +1948,29 @@ def page_india_map(df: pd.DataFrame | None):
         st.warning("No geographic coordinate data present.")
         return
 
-    import folium
-    from streamlit_folium import st_folium
-
     year = st.selectbox("Select Map Year Timeline", sorted(df["year"].unique()), index=len(df["year"].unique()) - 1)
     sub = df[df["year"] == year].dropna(subset=["latitude", "longitude"])
     
-    m = folium.Map(location=[20.5937, 78.9629], zoom_start=5, tiles="OpenStreetMap")
-    color_map = {"LOW": "#10b981", "MEDIUM": "#f59e0b", "HIGH": "#ef4444"}
-    
-    for _, r in sub.iterrows():
-        folium.CircleMarker(
-            location=[r["latitude"], r["longitude"]],
-            radius=7,
-            color=color_map.get(r["risk_label"], "#9ca3af"),
-            fill=True,
-            fill_color=color_map.get(r["risk_label"], "#9ca3af"),
-            fill_opacity=0.8,
-            popup=f"<b>{r['city']}</b> ({r['state']})<br>Year: {year}<br>Risk Tier: <b>{r['risk_label']}</b><br>Crime Rate: {r['crime_rate']:.2f} per 100k",
-        ).add_to(m)
+    try:
+        if folium is None or st_folium is None:
+            raise ImportError("Folium not available")
+        m = folium.Map(location=[20.5937, 78.9629], zoom_start=5, tiles="OpenStreetMap")
+        color_map = {"LOW": "#10b981", "MEDIUM": "#f59e0b", "HIGH": "#ef4444"}
+        
+        for _, r in sub.iterrows():
+            folium.CircleMarker(
+                location=[r["latitude"], r["longitude"]],
+                radius=7,
+                color=color_map.get(r["risk_label"], "#9ca3af"),
+                fill=True,
+                fill_color=color_map.get(r["risk_label"], "#9ca3af"),
+                fill_opacity=0.8,
+                popup=f"<b>{r['city']}</b> ({r['state']})<br>Year: {year}<br>Risk Tier: <b>{r['risk_label']}</b><br>Crime Rate: {r['crime_rate']:.2f} per 100k",
+            ).add_to(m)
 
-    st_folium(m, width="100%", height=550)
+        st_folium(m, width="100%", height=550)
+    except Exception as e:
+        st.map(sub[["latitude", "longitude"]], zoom=4)
 
 
 def page_district_matrix(df: pd.DataFrame | None):
