@@ -28,6 +28,7 @@ except ImportError:
         st_folium = None
 
 from src import config, data_loader, predict, visualization, auth
+from src.translations import t, LANGUAGES
 
 st.set_page_config(
     page_title="SURAKSHA AI | National Women Safety Intelligence Platform",
@@ -535,18 +536,45 @@ def render_missing_dataset_message():
 
 
 def sidebar_nav() -> str:
+    if "app_language" not in st.session_state:
+        st.session_state["app_language"] = "English"
+    lang = st.session_state["app_language"]
+
+    # Language Switcher at Top of Sidebar
+    lang_display_options = ["English", "ಕನ್ನಡ (Kannada)", "हिन्दी (Hindi)"]
+    lang_keys = ["English", "Kannada", "Hindi"]
+    cur_idx = lang_keys.index(lang) if lang in lang_keys else 0
+
+    st.sidebar.markdown(
+        f"<div style='margin-bottom: 0.25rem; font-size: 0.78rem; font-weight: 800; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em;'>{t('language_label', lang)}:</div>",
+        unsafe_allow_html=True
+    )
+    chosen_lang_display = st.sidebar.selectbox(
+        "Language Selection",
+        lang_display_options,
+        index=cur_idx,
+        label_visibility="collapsed",
+        key="app_language_selector_global"
+    )
+    selected_lang_key = lang_keys[lang_display_options.index(chosen_lang_display)]
+    if selected_lang_key != lang:
+        st.session_state["app_language"] = selected_lang_key
+        st.rerun()
+
+    lang = st.session_state["app_language"]
+
     logo_html = get_rotating_logo_html(size=70)
     st.sidebar.markdown(
         clean_html(f"""
-        <div style="text-align: center; padding: 0.8rem 0;">
+        <div style="text-align: center; padding: 0.5rem 0 0.8rem 0;">
             <div style="font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 900; color: #ffffff !important; letter-spacing: 0.03em; text-shadow: 0 0 12px rgba(255,255,255,0.4);">
                 SURAKSHA <span style="color: #c084fc; font-weight: 900; text-shadow: 0 0 14px #a855f7;">AI</span>
             </div>
-            <div style="margin-top: 0.4rem; margin-bottom: 0.3rem;">
+            <div style="margin-top: 0.3rem; margin-bottom: 0.3rem;">
                 {logo_html}
             </div>
-            <div style="font-size: 0.85rem; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 800;">
-                National Safety Intelligence
+            <div style="font-size: 0.82rem; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800;">
+                {t("app_subtitle", lang)}
             </div>
         </div>
         """),
@@ -560,63 +588,73 @@ def sidebar_nav() -> str:
             clean_html(f"""
             <div style="background: linear-gradient(145deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid #10b981; border-radius: 12px; padding: 0.85rem; margin-bottom: 0.8rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 800; color: #34d399; margin-bottom: 0.2rem;">
-                    👋 Welcome, {user_display}!
+                    👋 {t("welcome_user", lang)}, {user_display}!
                 </div>
                 <div style="font-size: 0.72rem; color: #34d399; margin-top: 0.25rem; font-weight: 700;">
-                    🟢 Authenticated Workspace
+                    🟢 {t("auth_workspace", lang)}
                 </div>
             </div>
             """),
             unsafe_allow_html=True,
         )
-        if st.sidebar.button("🚪 Logout", key="sidebar_user_logout_btn", use_container_width=True):
+        if st.sidebar.button(f"🚪 {t('logout', lang)}", key="sidebar_user_logout_btn", use_container_width=True):
             st.session_state.is_logged_in = False
             st.session_state.logged_user = ""
             st.session_state.logged_role = ""
-            st.toast("Logged out of SURAKSHA AI", icon="🚪")
+            st.toast(t("logged_out_toast", lang), icon="🚪")
             st.rerun()
         st.sidebar.divider()
 
-    nav_options = [
-        "🏠 Home",
-        "🛣️ Safe Route Navigator",
-        "🚨 Nearby Police Stations",
-        "📍 City & District Explorer",
-        "🧠 AI Risk Simulator",
-        "🗺️ India GIS Risk Map",
-        "📊 District Ranking Leaderboard",
+    nav_items = [
+        ("home", t("nav_home", lang)),
+        ("safe_routes", t("nav_safe_routes", lang)),
+        ("police", t("nav_police", lang)),
+        ("city_explorer", t("nav_city_explorer", lang)),
+        ("ai_simulator", t("nav_ai_simulator", lang)),
+        ("gis_map", t("nav_gis_map", lang)),
+        ("leaderboard", t("nav_leaderboard", lang)),
     ]
+    nav_keys = [k for k, _ in nav_items]
+    nav_labels = [l for _, l in nav_items]
+    label_to_key = dict(zip(nav_labels, nav_keys))
 
-    page = st.sidebar.radio("Navigation", nav_options)
+    saved_page = st.session_state.get("active_page_key", "home")
+    if saved_page not in nav_keys:
+        saved_page = "home"
+    current_page_idx = nav_keys.index(saved_page)
+
+    selected_label = st.sidebar.radio("Navigation", nav_labels, index=current_page_idx)
+    chosen_page_key = label_to_key.get(selected_label, "home")
+    st.session_state["active_page_key"] = chosen_page_key
 
     st.sidebar.divider()
-    # Native Streamlit Top-Level Emergency Helplines (100% dialer compatibility on all browsers & phones!)
+    # Native Streamlit Top-Level Emergency Helplines
     st.sidebar.markdown(
-        """
+        f"""
         <div style="background: linear-gradient(160deg, rgba(239, 68, 68, 0.25) 0%, rgba(17, 24, 39, 0.98) 40%, rgba(10, 14, 26, 0.98) 100%); border: 1.5px solid rgba(239, 68, 68, 0.55); border-radius: 14px; padding: 0.95rem; margin-bottom: 0.8rem; box-shadow: 0 10px 28px -6px rgba(239, 68, 68, 0.35);">
             <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 900; color: #ff8a8a; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
-                <span style="color: #ffffff !important; font-weight: 900;">🚨 Emergency Helplines</span>
-                <span style="font-size: 0.7rem; color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.2); padding: 2px 7px; border-radius: 4px;">TAP TO CALL</span>
+                <span style="color: #ffffff !important; font-weight: 900;">{t("emergency_helplines", lang)}</span>
+                <span style="font-size: 0.7rem; color: #34d399; font-weight: 800; background: rgba(52, 211, 153, 0.2); padding: 2px 7px; border-radius: 4px;">{t("tap_to_call", lang)}</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem;">
                 <a href="tel:1091" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
                     <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">1091</span>
-                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">Women</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">{t("helpline_women", lang)}</span>
                 </a>
                 <a href="tel:181" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
                     <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">181</span>
-                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">Distress</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">{t("helpline_distress", lang)}</span>
                 </a>
                 <a href="tel:112" target="_self" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 10px; padding: 0.55rem 0.2rem; text-decoration: none; transition: all 0.2s ease;">
                     <span style="font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 900; color: #ffffff;">112</span>
-                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">National</span>
+                    <span style="font-size: 0.7rem; color: #fca5a5; font-weight: 800; margin-top: 2px;">{t("helpline_national", lang)}</span>
                 </a>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    return page
+    return chosen_page_key
 
 
 def parse_and_format_route_steps(route):
@@ -680,390 +718,58 @@ def parse_and_format_route_steps(route):
     return formatted_steps
 
 
-def render_folium_safe_routes_map(origin_lat, origin_lon, dest_lat, dest_lon, origin_label, dest_label, safe_route, unsafe_route, df_police, safe_score, unsafe_score, active_step_coord=None, active_step_label=""):
-    """Renders dual routes on Folium dark map with optional active step junction focus."""
-    try:
-        mid_lat = (origin_lat + dest_lat) / 2.0
-        mid_lon = (origin_lon + dest_lon) / 2.0
-        
-        map_center = [active_step_coord[0], active_step_coord[1]] if active_step_coord else [mid_lat, mid_lon]
-        map_zoom = 14 if active_step_coord else 9
-
-        m = folium.Map(
-            location=map_center,
-            zoom_start=map_zoom,
-            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-            attr="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
-        )
-        folium.TileLayer(
-            tiles="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            name="OpenStreetMap Standard"
-        ).add_to(m)
-
-        all_lats = [origin_lat, dest_lat]
-        all_lons = [origin_lon, dest_lon]
-
-        # Draw Unsafe / Alternate Route first (Crimson Red / Dashed)
-        if unsafe_route and "geometry" in unsafe_route:
-            u_coords = [[pt[1], pt[0]] for pt in unsafe_route["geometry"]["coordinates"]]
-            for pt in u_coords[::5]:
-                all_lats.append(pt[0])
-                all_lons.append(pt[1])
-            u_dist_km = unsafe_route["distance"] / 1000.0
-            u_dur_min = unsafe_route["duration"] / 60.0
-            folium.PolyLine(
-                locations=u_coords,
-                color="#ef4444",
-                weight=5,
-                opacity=0.75,
-                dash_array="8, 8",
-                tooltip=f"🔴 Alternate / Unsafe Bypass Route — Safety Index: {unsafe_score}/100 ({u_dist_km:.1f} km, {u_dur_min:.0f} mins)",
-            ).add_to(m)
-
-        # Draw Safe Route (Bold Green Solid)
-        if safe_route and "geometry" in safe_route:
-            s_coords = [[pt[1], pt[0]] for pt in safe_route["geometry"]["coordinates"]]
-            for pt in s_coords[::5]:
-                all_lats.append(pt[0])
-                all_lons.append(pt[1])
-            s_dist_km = safe_route["distance"] / 1000.0
-            s_dur_min = safe_route["duration"] / 60.0
-            folium.PolyLine(
-                locations=s_coords,
-                color="#10b981",
-                weight=7,
-                opacity=0.92,
-                tooltip=f"🟢 RECOMMENDED SAFE ROUTE — Safety Index: {safe_score}/100 ({s_dist_km:.1f} km, {s_dur_min:.0f} mins)",
-            ).add_to(m)
-
-        if not active_step_coord:
-            m.fit_bounds([[min(all_lats), min(all_lons)], [max(all_lats), max(all_lons)]], padding=(35, 35))
-
-        # Origin Marker
-        folium.Marker(
-            [origin_lat, origin_lon],
-            popup=f"<b>🟢 START ORIGIN:</b><br>{origin_label}",
-            tooltip=f"🟢 Origin: {origin_label}",
-            icon=folium.Icon(color="green", icon="play", prefix="fa")
-        ).add_to(m)
-
-        # Destination Marker
-        folium.Marker(
-            [dest_lat, dest_lon],
-            popup=f"<b>🔴 DESTINATION:</b><br>{dest_label}",
-            tooltip=f"🔴 Destination: {dest_label}",
-            icon=folium.Icon(color="red", icon="flag", prefix="fa")
-        ).add_to(m)
-
-        # Police Station Markers
-        if df_police is not None and not df_police.empty:
-            for idx, row in df_police.iterrows():
-                st_lat, st_lon = float(row["latitude"]), float(row["longitude"])
-                d_orig = haversine_distance(origin_lat, origin_lon, st_lat, st_lon)
-                d_dest = haversine_distance(dest_lat, dest_lon, st_lat, st_lon)
-                d_mid = haversine_distance(mid_lat, mid_lon, st_lat, st_lon)
-                if min(d_orig, d_dest, d_mid) <= 50.0:
-                    phone_clean = str(row['phone']).replace('-', '').replace(' ', '')
-                    pop_html = f"""
-                    <div style="font-family: sans-serif; padding: 4px; min-width: 170px;">
-                        <div style="font-size: 0.75rem; font-weight: 800; color: #2563eb;">🛡️ POLICE ASSISTANCE STATION</div>
-                        <div style="font-size: 1.05rem; font-weight: 800; color: #111827; margin: 3px 0;">🚨 {row['station_name']}</div>
-                        <div style="font-size: 0.8rem; color: #4b5563;">📍 {row['city']}</div>
-                        <div style="font-size: 0.8rem; color: #111827; margin-top: 3px;">📞 <b>Phone:</b> <a href="tel:{phone_clean}">{row['phone']}</a></div>
-                    </div>
-                    """
-                    folium.Marker(
-                        [st_lat, st_lon],
-                        popup=folium.Popup(pop_html, max_width=250),
-                        tooltip=f"🛡️ Police Station: {row['station_name']}",
-                        icon=folium.Icon(color="blue", icon="shield", prefix="fa")
-                    ).add_to(m)
-
-        # Active Turn Junction Marker if navigating steps
-        if active_step_coord:
-            folium.Marker(
-                [active_step_coord[0], active_step_coord[1]],
-                popup=f"<b>📍 ACTIVE TURN:</b><br>{active_step_label}",
-                tooltip=f"📍 Turn Focus: {active_step_label}",
-                icon=folium.Icon(color="orange", icon="compass", prefix="fa")
-            ).add_to(m)
-
-        st_folium(m, width=None, height=520, use_container_width=True)
-    except Exception as e:
-        st.warning("Folium rendering error: " + str(e))
-
-
-def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
-    """Safe Route Navigation Page supporting India-wide origin/destination, distance, & safety scoring."""
-    st.markdown(
+def render_animated_quote_carousel(lang: str = "English"):
+    quotes_data = {
+        "English": [
+            ("“There is no tool for development more effective than the empowerment of women. When women are safe, educated, and empowered, entire families, communities, and nations prosper.”", "— Kofi Annan, Former UN Secretary-General"),
+            ("“I measure the progress of a community by the degree of progress which women have achieved. When women are safe and dignified, society advances.”", "— Dr. B. R. Ambedkar, Chief Architect of Indian Constitution"),
+            ("“Human rights are women’s rights, and women’s rights are human rights. Protecting women’s safety is a fundamental measure of civilization.”", "— Hillary Rodham Clinton"),
+            ("“Safety and security don’t just happen, they are the result of collective consensus, public investment, and unwavering community action.”", "— Nelson Mandela, Former President of South Africa"),
+            ("“Extremists have shown what frightens them most: a girl with a book. When women are safe and educated, they transform entire nations.”", "— Malala Yousafzai, Nobel Peace Laureate")
+        ],
+        "Kannada": [
+            ("“ಮಹಿಳೆಯರ ಸಬಲೀಕರಣಕ್ಕಿಂತ ಅಭಿವೃದ್ಧಿಗೆ ಹೆಚ್ಚು ಪರಿಣಾಮಕಾರಿಯಾದ ಸಾಧನ ಮತ್ತೊಂದಿಲ್ಲ. ಮಹಿಳೆಯರು ಸುರಕ್ಷಿತರಾಗಿದ್ದಾಗ, ಇಡೀ ಕುಟುಂಬ, ಸಮುದಾಯ ಮತ್ತು ರಾಷ್ಟ್ರವೇ ಸಮೃದ್ಧವಾಗುತ್ತದೆ.”", "— ಕೋಫಿ ಅನ್ನಾನ್, ಮಾಜಿ ಯುಎನ್ ಪ್ರಧಾನ ಕಾರ್ಯದರ್ಶಿ"),
+            ("“ಮಹಿಳೆಯರು ಸಾಧಿಸಿದ ಪ್ರಗತಿಯ ಮಟ್ಟದ ಆಧಾರದ ಮೇಲೆ ನಾನು ಸಮಾಜದ ಪ್ರಗತಿಯನ್ನು ಅಳೆಯುತ್ತೇನೆ. ಮಹಿಳೆಯರು ಸುರಕ್ಷಿತರಾಗಿದ್ದಾಗ ಸಮಾಜ ಮುನ್ನಡೆಯುತ್ತದೆ.”", "— ಡಾ. ಬಿ. ಆರ್. ಅಂಬೇಡ್ಕರ್, ಭಾರತೀಯ ಸಂವಿಧಾನ ಶಿಲ್ಪಿ"),
+            ("“ಮಾನವ ಹಕ್ಕುಗಳೇ ಮಹಿಳಾ ಹಕ್ಕುಗಳು, ಮತ್ತು ಮಹಿಳಾ ಹಕ್ಕುಗಳೇ ಮಾನವ ಹಕ್ಕುಗಳು. ಮಹಿಳೆಯರ ಸುರಕ್ಷತೆಯನ್ನು ರಕ್ಷಿಸುವುದೇ ನಾಗರಿಕತೆಯ ಅಳತೆಗೋಲು.”", "— ಹಿಲರಿ ಕ್ಲಿಂಟನ್"),
+            ("“ಸುರಕ್ಷತೆ ಮತ್ತು ಭದ್ರತೆ ಕೇವಲ ಆಕಸ್ಮಿಕವಲ್ಲ, ಅವು ಸಾರ್ವಜನಿಕ ಸಹಭಾಗಿತ್ವ ಮತ್ತು ದೃಢ ಸಮುದಾಯ ಕ್ರಿಯೆಯ ಫಲಿತಾಂಶವಾಗಿದೆ.”", "— ನೆಲ್ಸನ್ ಮಂಡೇಲಾ"),
+            ("“ಹೆಣ್ಣುಮಕ್ಕಳು ಶಿಕ್ಷಣ ಪಡೆದು ಸುರಕ್ಷಿತರಾಗಿದ್ದಾಗ, ಅವರು ಇಡೀ ರಾಷ್ಟ್ರವನ್ನೇ ರೂಪಾಂತರಿಸುತ್ತಾರೆ.”", "— ಮಲಾಲ ಯೂಸುಫ್‌ಝೈ, ನೊಬೆಲ್ ಪ್ರಶಸ್ತಿ ಪುರಸ್ಕೃತೆ")
+        ],
+        "Hindi": [
+            ("“महिलाओं के सशक्तिकरण से अधिक प्रभावी विकास का कोई साधन नहीं है। जब महिलाएं सुरक्षित, शिक्षित और सशक्त होती हैं, तो पूरा राष्ट्र समृद्ध होता है।”", "— कोफी अन्नान, पूर्व संयुक्त राष्ट्र महासचिव"),
+            ("“मैं किसी समुदाय की प्रगति को उस प्रगति की डिग्री से मापता हूं जो महिलाओं ने हासिल की है। जब महिलाएं सुरक्षित होती हैं, तो समाज आगे बढ़ता है।”", "— डॉ. बी. आर. अम्बेडकर, भारतीय संविधान के निर्माता"),
+            ("“मानवाधिकार ही महिला अधिकार हैं और महिला अधिकार ही मानवाधिकार हैं। महिला सुरक्षा की रक्षा करना सभ्यता का मौलिक पैमाना है।”", "— हिलेरी क्लिंटन"),
+            ("“सुरक्षा और संरक्षा अपने आप नहीं होती, वे सार्वजनिक आम सहमति, निवेश और दृढ़ सामुदायिक कार्रवाई का परिणाम हैं।”", "— नेल्सन मंडेला"),
+            ("“जब महिलाएं सुरक्षित और शिक्षित होती हैं, तो वे पूरे राष्ट्र का कायाकल्प कर देती हैं।”", "— मलाला यूसुफजई, नोबेल शांति पुरस्कार विजेता")
+        ]
+    }
+    target_quotes = quotes_data.get(lang, quotes_data["English"])
+    slides_markup = ""
+    dots_markup = ""
+    for idx, (q_text, q_author) in enumerate(target_quotes):
+        active_cls = "active" if idx == 0 else ""
+        slides_markup += f"""
+            <div class="quote-slide {active_cls}">
+                <div class="quote-text">{q_text}</div>
+                <div class="quote-author">{q_author}</div>
+            </div>
         """
-        <div class="hero-header" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(30, 27, 75, 0.85) 100%); border: 1px solid rgba(16, 185, 129, 0.35);">
-            <div style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
-                🛣️ INTELLIGENT SAFETY ROUTING ENGINE — INDIA WIDE
-            </div>
-            <div class="hero-title" style="color: #ffffff;">🛣️ Safe Route Navigator</div>
-            <div class="hero-subtitle">Enter any origin address, village, PIN code, or live location and destination to compute accurate driving distance and compare <b>Safe Routes (🟢 High Police Coverage)</b> vs <b>Unsafe Bypass Routes (🔴 High Risk Corridor)</b>.</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        dots_markup += f'<div class="dot {active_cls}" onclick="setSlide({idx})"></div>\n'
 
-    # Inputs layout
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("<h4 style='color: #10b981; margin-bottom: 0.3rem;'>🟢 1. Origin Location</h4>", unsafe_allow_html=True)
-        origin_mode = st.radio(
-            "Select Origin Mode:",
-            ["🔍 Search Village / Address / PIN Code", "📡 Use Live Location (GPS Coordinates)"],
-            key="origin_mode_choice"
-        )
-        if origin_mode == "🔍 Search Village / Address / PIN Code":
-            origin_query = st.text_input(
-                "Enter Origin Address, Village Name, or 6-Digit PIN Code:",
-                value=st.session_state.get("safe_route_origin", "Hassan"),
-                placeholder="e.g. Hassan, Agumbe, Sedam, Koramangala, 573201...",
-                key="origin_search_input"
-            )
-            live_origin_coords = None
-        else:
-            st.info("📡 Live GPS Mode Active: Enter current latitude & longitude or select current position.")
-            c_lat, c_lon = st.columns(2)
-            with c_lat:
-                user_lat_in = st.number_input("Latitude:", value=13.0068, format="%.5f", key="live_lat")
-            with c_lon:
-                user_lon_in = st.number_input("Longitude:", value=76.1038, format="%.5f", key="live_lon")
-            live_origin_coords = (user_lat_in, user_lon_in)
-            origin_query = f"Live GPS Position ({user_lat_in:.4f}, {user_lon_in:.4f})"
-
-    with col2:
-        st.markdown("<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>🔴 2. Destination Location</h4>", unsafe_allow_html=True)
-        dest_query = st.text_input(
-            "Enter Destination Address, Village Name, or 6-Digit PIN Code:",
-            value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
-            placeholder="e.g. Shravanabelagola, Mysuru, Udupi, Sedam, 573135...",
-            key="dest_search_input"
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    calc_btn = st.button("🚀 COMPUTE ACCURATE DISTANCE & SAFE VS UNSAFE ROUTES", use_container_width=True)
-
-    if not calc_btn and "route_calculated" not in st.session_state:
-        st.info("💡 **Click the button above** to calculate driving distance, duration, and safety analysis between origin and destination.")
-        return
-
-    st.session_state["route_calculated"] = True
-    st.session_state["safe_route_origin"] = origin_query
-    st.session_state["safe_route_dest"] = dest_query
-
-    with st.spinner("🔍 Geocoding locations and computing turn-by-turn OSRM driving routes across India..."):
-        if live_origin_coords:
-            orig_lat, orig_lon = live_origin_coords
-            orig_label = f"Live GPS ({orig_lat:.4f}, {orig_lon:.4f})"
-        else:
-            orig_res = geocode_osm_india(origin_query)
-            if not orig_res:
-                st.error(f"Could not locate origin: '{origin_query}'. Please check the spelling or enter a 6-digit PIN code.")
-                return
-            orig_lat, orig_lon, orig_label = orig_res
-
-        dest_res = geocode_osm_india(dest_query)
-        if not dest_res:
-            st.error(f"Could not locate destination: '{dest_query}'. Please check the spelling or enter a 6-digit PIN code.")
-            return
-        dest_lat, dest_lon, dest_label = dest_res
-
-        r_primary, r_alt = fetch_osrm_driving_routes(orig_lat, orig_lon, dest_lat, dest_lon)
-
-        if not r_primary:
-            st.error("Could not fetch road driving routes between origin and destination. Please ensure points are connected by road.")
-            return
-
-        score_p, st_count_p, st_list_p = calculate_route_safety_score(r_primary, df_police)
-        score_a, st_count_a, st_list_a = calculate_route_safety_score(r_alt, df_police)
-
-        if score_p >= score_a:
-            safe_route, unsafe_route = r_primary, r_alt
-            safe_score, unsafe_score = score_p, max(38.0, min(score_p - 18.5, score_a))
-            safe_st_cnt, unsafe_st_cnt = st_count_p, max(0, st_count_a - 1)
-        else:
-            safe_route, unsafe_route = r_alt, r_primary
-            safe_score, unsafe_score = score_a, max(38.0, min(score_a - 18.5, score_p))
-            safe_st_cnt, unsafe_st_cnt = st_count_a, max(0, st_count_p - 1)
-
-    # Parse turn-by-turn steps
-    steps = parse_and_format_route_steps(safe_route)
-
-    # Results Section Header
-    st.markdown("---")
-    st.markdown(
-        f"""
-        <div style="background: rgba(17, 24, 39, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); padding: 1.2rem; border-radius: 16px; margin-bottom: 1.5rem;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: #9ca3af; text-transform: uppercase;">ACCURATE ROUTE COMPARISON</div>
-            <div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; font-family: 'Outfit', sans-serif;">
-                📍 Origin: <span style="color: #10b981;">{origin_query}</span> ➔ 📍 Destination: <span style="color: #ef4444;">{dest_query}</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Metrics Side-by-Side Cards
-    s_dist_km = safe_route["distance"] / 1000.0
-    s_dur_min = safe_route["duration"] / 60.0
-
-    u_dist_km = unsafe_route["distance"] / 1000.0
-    u_dur_min = unsafe_route["duration"] / 60.0
-
-    m_col1, m_col2 = st.columns(2)
-
-    with m_col1:
-        st.markdown(
-            f"""
-            <div class="glass-card" style="background: linear-gradient(135deg, rgba(6, 78, 59, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%); border: 2.5px solid #10b981; padding: 1.25rem; box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #10b981; color: #042f2e; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">🟢 RECOMMENDED SAFE ROUTE</span>
-                    <span style="font-size: 1.5rem; font-weight: 900; color: #34d399;">{safe_score}/100</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
-                    <div>
-                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">ACCURATE ROAD DISTANCE</div>
-                        <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{s_dist_km:.2f} <span style="font-size: 0.9rem;">km</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">ESTIMATED TRAVEL TIME</div>
-                        <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{s_dur_min:.0f} <span style="font-size: 0.9rem;">mins</span></div>
-                    </div>
-                </div>
-                <div style="margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #d1d5db;">
-                    🛡️ <b>Police Protection:</b> {safe_st_cnt} Stations along primary highway corridor<br>
-                    💡 <b>Safety Rating:</b> Well-lit, active state/national highway, continuous patrol
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    with m_col2:
-        st.markdown(
-            f"""
-            <div class="glass-card" style="background: linear-gradient(135deg, rgba(127, 29, 29, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%); border: 2.5px solid #ef4444; padding: 1.25rem; box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #ef4444; color: #450a0a; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">🔴 ALTERNATE / UNSAFE BYPASS</span>
-                    <span style="font-size: 1.5rem; font-weight: 900; color: #fca5a5;">{unsafe_score}/100</span>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
-                    <div>
-                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">ACCURATE ROAD DISTANCE</div>
-                        <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{u_dist_km:.2f} <span style="font-size: 0.9rem;">km</span></div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">ESTIMATED TRAVEL TIME</div>
-                        <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{u_dur_min:.0f} <span style="font-size: 0.9rem;">mins</span></div>
-                    </div>
-                </div>
-                <div style="margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #d1d5db;">
-                    ⚠️ <b>Police Protection:</b> {unsafe_st_cnt} Stations along remote bypass route<br>
-                    ⚠️ <b>Safety Risk:</b> Unlit interior bypass roads, sparse police coverage, elevated isolation
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    # In-App Interactive Turn-by-Turn Navigation Center
-    st.markdown("---")
-    st.markdown("<h3 style='color: #10b981; font-family: Outfit, sans-serif;'>🗺️ IN-APP NATIVE TURN-BY-TURN NAVIGATION CENTER</h3>", unsafe_allow_html=True)
-
-    selected_step_idx = 0
-    active_coord = None
-    active_label = ""
-
-    if steps:
-        step_labels = [f"Step {s['step_num']}: {s['icon']} {s['action']} ({s['distance_str']})" for s in steps]
-        selected_step_idx = st.selectbox(
-            "🧭 Step Through Turn Maneuvers (In-App Navigation Guidance):",
-            range(len(step_labels)),
-            format_func=lambda i: step_labels[i],
-            key="in_app_step_selector"
-        )
-        cur_step = steps[selected_step_idx]
-        active_coord = (cur_step["lat"], cur_step["lon"])
-        active_label = f"Step {cur_step['step_num']}: {cur_step['action']}"
-
-        # Native In-App Turn HUD Banner
-        hud_html = f"""
-        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 16px; padding: 1.25rem 1.6rem; margin-bottom: 1rem; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25); display: flex; align-items: center; gap: 1.5rem;">
-            <div style="font-size: 3rem; line-height: 1;">{cur_step['icon']}</div>
-            <div style="flex: 1;">
-                <div style="font-size: 0.8rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">IN-APP TURN GUIDANCE — STEP {cur_step['step_num']} OF {len(steps)}</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin: 0.2rem 0; font-family: 'Outfit', sans-serif;">{cur_step['action']}</div>
-                <div style="font-size: 0.88rem; color: #9ca3af;">📍 <b>Street / Corridor:</b> {cur_step['name']} | 📏 <b>Distance:</b> {cur_step['distance_str']} | {cur_step['safety_note']}</div>
-            </div>
-        </div>
-        """
-        st.markdown(hud_html, unsafe_allow_html=True)
-
-    # Interactive Folium Map with Active Junction Auto-Focus
-    render_folium_safe_routes_map(
-        orig_lat, orig_lon, dest_lat, dest_lon,
-        orig_label, dest_label,
-        safe_route, unsafe_route,
-        df_police, safe_score, unsafe_score,
-        active_step_coord=active_coord,
-        active_step_label=active_label
-    )
-
-    # Complete Step-by-Step Directions Table Natively Inside Web App
-    if steps:
-        with st.expander("📋 View Complete In-App Turn-by-Turn Navigation Guide"):
-            df_steps = pd.DataFrame(steps)[["step_num", "icon", "action", "name", "distance_str", "safety_note"]]
-            df_steps.columns = ["Step #", "Turn Icon", "Maneuver / Action", "Road Name", "Distance", "Corridor Safety Status"]
-            st.table(df_steps)
-
-    # Native In-App Emergency & SOS Bar
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown(
-        """
-        <div style="background: rgba(17, 24, 39, 0.9); border: 1px solid rgba(255,255,255,0.12); padding: 1.2rem; border-radius: 14px; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-            <div>
-                <div style="font-weight: 800; font-size: 1.1rem; color: #ffffff;">🚨 SURAKSHA AI EMERGENCY ROUTE CONTROLS</div>
-                <div style="font-size: 0.85rem; color: #9ca3af;">100% In-App Safety Routing with Instant Emergency Hotline Dialing</div>
-            </div>
-            <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                <a href="tel:112" style="text-decoration: none;">
-                    <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
-                        🚨 Emergency SOS (Call 112)
-                    </div>
-                </a>
-                <a href="tel:1091" style="text-decoration: none;">
-                    <div style="background: #ec4899; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
-                        🌸 Women Helpline (Call 1091)
-                    </div>
-                </a>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-def render_animated_quote_carousel():
-    quote_html = """
+    quote_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
     <meta charset="utf-8">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{
         background: transparent;
         font-family: 'Plus Jakarta Sans', sans-serif;
         color: #f8fafc;
         overflow: hidden;
-    }
-    .quote-box {
+    }}
+    .quote-box {{
         background: linear-gradient(135deg, rgba(30, 27, 75, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
         border: 1px solid rgba(129, 140, 248, 0.4);
         border-left: 6px solid #818cf8;
@@ -1075,8 +781,8 @@ def render_animated_quote_carousel():
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-    }
-    .quote-mark {
+    }}
+    .quote-mark {{
         font-size: 4rem;
         color: #818cf8;
         line-height: 0.8;
@@ -1085,27 +791,27 @@ def render_animated_quote_carousel():
         top: 10px;
         left: 18px;
         opacity: 0.3;
-    }
-    .quote-slide {
+    }}
+    .quote-slide {{
         display: none;
         animation: fadeInSlide 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-    .quote-slide.active {
+    }}
+    .quote-slide.active {{
         display: block;
-    }
-    @keyframes fadeInSlide {
-        from {
+    }}
+    @keyframes fadeInSlide {{
+        from {{
             opacity: 0;
             transform: translateY(12px) scale(0.98);
-        }
-        to {
+        }}
+        to {{
             opacity: 1;
             transform: translateY(0) scale(1);
-        }
-    }
-    .quote-text {
+        }}
+    }}
+    .quote-text {{
         font-family: 'Outfit', sans-serif;
-        font-size: 1.4rem;
+        font-size: 1.25rem;
         font-weight: 700;
         line-height: 1.5;
         background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #a5b4fc 100%);
@@ -1113,35 +819,35 @@ def render_animated_quote_carousel():
         -webkit-text-fill-color: transparent;
         margin-bottom: 0.6rem;
         padding-left: 1.8rem;
-    }
-    .quote-author {
+    }}
+    .quote-author {{
         text-align: right;
         color: #34d399;
         font-weight: 700;
         font-size: 1.02rem;
         letter-spacing: 0.03em;
-    }
-    .dots-wrapper {
+    }}
+    .dots-wrapper {{
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 8px;
         margin-top: 6px;
-    }
-    .dot {
+    }}
+    .dot {{
         width: 10px;
         height: 10px;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.25);
         cursor: pointer;
         transition: all 0.4s ease;
-    }
-    .dot.active {
+    }}
+    .dot.active {{
         width: 32px;
         border-radius: 6px;
         background: linear-gradient(90deg, #6366f1, #a855f7);
         box-shadow: 0 0 12px rgba(99, 102, 241, 0.8);
-    }
+    }}
     </style>
     </head>
     <body>
@@ -1150,38 +856,11 @@ def render_animated_quote_carousel():
         <div class="quote-mark">“</div>
         
         <div id="slides-container">
-            <div class="quote-slide active">
-                <div class="quote-text">“There is no tool for development more effective than the empowerment of women. When women are safe, educated, and empowered, entire families, communities, and nations prosper.”</div>
-                <div class="quote-author">— Kofi Annan, Former UN Secretary-General</div>
-            </div>
-
-            <div class="quote-slide">
-                <div class="quote-text">“I measure the progress of a community by the degree of progress which women have achieved. When women are safe and dignified, society advances.”</div>
-                <div class="quote-author">— Dr. B. R. Ambedkar, Chief Architect of Indian Constitution</div>
-            </div>
-
-            <div class="quote-slide">
-                <div class="quote-text">“Human rights are women’s rights, and women’s rights are human rights. Protecting women’s safety is a fundamental measure of civilization.”</div>
-                <div class="quote-author">— Hillary Rodham Clinton</div>
-            </div>
-
-            <div class="quote-slide">
-                <div class="quote-text">“Safety and security don’t just happen, they are the result of collective consensus, public investment, and unwavering community action.”</div>
-                <div class="quote-author">— Nelson Mandela, Former President of South Africa</div>
-            </div>
-
-            <div class="quote-slide">
-                <div class="quote-text">“Extremists have shown what frightens them most: a girl with a book. When women are safe and educated, they transform entire nations.”</div>
-                <div class="quote-author">— Malala Yousafzai, Nobel Peace Laureate</div>
-            </div>
+            {slides_markup}
         </div>
 
         <div class="dots-wrapper">
-            <div class="dot active" onclick="setSlide(0)"></div>
-            <div class="dot" onclick="setSlide(1)"></div>
-            <div class="dot" onclick="setSlide(2)"></div>
-            <div class="dot" onclick="setSlide(3)"></div>
-            <div class="dot" onclick="setSlide(4)"></div>
+            {dots_markup}
         </div>
     </div>
 
@@ -1191,31 +870,31 @@ def render_animated_quote_carousel():
     const dots = document.querySelectorAll('.dot');
     const totalSlides = slides.length;
 
-    function showSlide(index) {
+    function showSlide(index) {{
         slides.forEach(s => s.classList.remove('active'));
         dots.forEach(d => d.classList.remove('active'));
         
         slides[index].classList.add('active');
         dots[index].classList.add('active');
         currentSlide = index;
-    }
+    }}
 
-    function nextSlide() {
+    function nextSlide() {{
         let next = (currentSlide + 1) % totalSlides;
         showSlide(next);
-    }
+    }}
 
-    function setSlide(index) {
+    function setSlide(index) {{
         showSlide(index);
         resetTimer();
-    }
+    }}
 
     let timer = setInterval(nextSlide, 5500);
 
-    function resetTimer() {
+    function resetTimer() {{
         clearInterval(timer);
         timer = setInterval(nextSlide, 5500);
-    }
+    }}
     </script>
 
     </body>
@@ -1224,7 +903,7 @@ def render_animated_quote_carousel():
     st.components.v1.html(quote_html, height=215)
 
 
-def page_home(df: pd.DataFrame | None):
+def page_home(df: pd.DataFrame | None, lang: str = "English"):
     # Initialize session states for interactive SOS, Login, and User authentication
     if "show_sos" not in st.session_state:
         st.session_state.show_sos = False
@@ -1247,25 +926,36 @@ def page_home(df: pd.DataFrame | None):
                 st.session_state.show_login = False
         with act_col2:
             if st.session_state.is_logged_in:
-                if st.button("🚪 Logout", key="btn_top_logout", use_container_width=True):
+                if st.button(f"🚪 {t('logout', lang)}", key="btn_top_logout", use_container_width=True):
                     st.session_state.is_logged_in = False
                     st.session_state.logged_user = ""
                     st.session_state.logged_role = ""
                     st.session_state.show_login = False
-                    st.toast("Logged out of SURAKSHA AI", icon="🚪")
+                    st.toast(t("logged_out_toast", lang), icon="🚪")
                     st.rerun()
             else:
-                if st.button("👤 Login", key="btn_top_login", use_container_width=True):
+                login_label = "👤 Login" if lang == "English" else ("👤 ಲಾಗಿನ್" if lang == "Kannada" else "👤 लॉगिन")
+                if st.button(login_label, key="btn_top_login", use_container_width=True):
                     st.session_state.show_login = not st.session_state.show_login
                     st.session_state.show_sos = False
 
     # 2. Sleek Center Header with Rotating Logo Below Title
     logo_home_html = get_rotating_logo_html(size=95)
+    if lang == "Kannada":
+        desc_text = "ಅಧಿಕೃತ AI-ಚಾಲಿತ ಮಹಿಳಾ ಸುರಕ್ಷತೆ ಮತ್ತು ಜಿಯೋಸ್ಪೇಷಿಯಲ್ ಅಪಾಯ ವಿಶ್ಲೇಷಣಾ ವ್ಯವಸ್ಥೆ"
+        badge_text = "ಸುರಕ್ಷಾ AI ಸಿಸ್ಟಮ್ ಆನ್‌ಲೈನ್ &bull; ಎನ್‌ಸಿಆರ್‌ಬಿ ಮತ್ತು ಜಿಐಎಸ್ ಎಂಜಿನ್ ಸಕ್ರಿಯವಾಗಿದೆ"
+    elif lang == "Hindi":
+        desc_text = "आधिकारिक AI-संचालित महिला सुरक्षा और भू-स्थानिक जोखिम प्रणाली"
+        badge_text = "सुरक्षा AI सिस्टम ऑनलाइन &bull; एनसीआरबी और जीआईएस इंजन सक्रिय है"
+    else:
+        desc_text = "Official AI-Powered Women Safety & Geospatial Risk System"
+        badge_text = "SURAKSHA AI SYSTEM ONLINE &bull; NCRB & GIS ENGINE ACTIVE"
+
     st.markdown(
         clean_html(f"""
         <div style="text-align: center; margin-bottom: 1rem; margin-top: -0.5rem;">
             <div class="live-badge">
-                <div class="pulse-dot"></div> SURAKSHA AI SYSTEM ONLINE &bull; NCRB & GIS ENGINE ACTIVE
+                <div class="pulse-dot"></div> {badge_text}
             </div>
             <h1 style="font-family: 'Outfit', sans-serif; font-size: 3.2rem; font-weight: 800; margin: 0.2rem 0; letter-spacing: -0.02em;">
                 SURAKSHA <span style="background: linear-gradient(135deg, #818cf8 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span>
@@ -1274,22 +964,20 @@ def page_home(df: pd.DataFrame | None):
                 {logo_home_html}
             </div>
             <div style="font-size: 1.15rem; font-weight: 600; color: #cbd5e1; margin-top: 0.2rem;">
-                Official AI-Powered Women Safety & Geospatial Risk System
+                {desc_text}
             </div>
         </div>
         """),
         unsafe_allow_html=True,
     )
 
-
-
     # Interactive SOS Drawer / Modal Panel
     if st.session_state.show_sos:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="border-left: 6px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 800; color: #fca5a5;">
-                    🚨 SURAKSHA EMERGENCY SOS PANEL
+                    🚨 {t("emergency_helplines", lang)}
                 </div>
                 <div style="color: #d1d5db; font-size: 0.88rem; margin-top: 0.2rem;">
                     24x7 Emergency Helplines & Location Alert Broadcast.
@@ -1300,13 +988,13 @@ def page_home(df: pd.DataFrame | None):
         )
         sos_c1, sos_c2, sos_c3, sos_c4 = st.columns(4)
         with sos_c1:
-            st.markdown('<a href="tel:112" style="text-decoration: none;"><div style="background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fca5a5;">📞 Call 112 (Emergency)</div></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="tel:112" style="text-decoration: none;"><div style="background: rgba(239, 68, 68, 0.25); border: 1px solid #ef4444; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fca5a5;">📞 112 ({t("helpline_national", lang)})</div></a>', unsafe_allow_html=True)
         with sos_c2:
-            st.markdown('<a href="tel:1091" style="text-decoration: none;"><div style="background: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fbcfe8;">🌸 Call 1091 (Women)</div></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="tel:1091" style="text-decoration: none;"><div style="background: rgba(236, 72, 153, 0.25); border: 1px solid #ec4899; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #fbcfe8;">🌸 1091 ({t("helpline_women", lang)})</div></a>', unsafe_allow_html=True)
         with sos_c3:
-            st.markdown('<a href="tel:1930" style="text-decoration: none;"><div style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #bfdbfe;">💻 Call 1930 (Cyber)</div></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="tel:1930" style="text-decoration: none;"><div style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #bfdbfe;">💻 1930 ({t("helpline_cyber", lang)})</div></a>', unsafe_allow_html=True)
         with sos_c4:
-            st.markdown('<a href="tel:1098" style="text-decoration: none;"><div style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #a7f3d0;">👧 Call 1098 (Child)</div></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="tel:1098" style="text-decoration: none;"><div style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; border-radius: 8px; padding: 0.65rem; text-align: center; font-weight: 700; color: #a7f3d0;">👧 1098 ({t("helpline_child", lang)})</div></a>', unsafe_allow_html=True)
         
         loc_active = st.session_state.get("safe_route_origin") or st.session_state.get("last_searched_place") or "Current Location"
         top_sos_msg = (
@@ -1321,7 +1009,7 @@ def page_home(df: pd.DataFrame | None):
             <div style="margin-top: 0.8rem; margin-bottom: 0.8rem;">
                 <a href="https://api.whatsapp.com/send?text={encoded_top_sos}" target="_blank" style="text-decoration: none;">
                     <div style="background: #25d366; color: #ffffff; padding: 0.75rem 1.2rem; border-radius: 10px; font-weight: 800; text-align: center; display: block; box-shadow: 0 4px 14px rgba(37, 211, 102, 0.4);">
-                        📲 Share Live SOS Location & Route Pin via WhatsApp
+                        📲 {t("sos_broadcast_btn", lang)}
                     </div>
                 </a>
             </div>
@@ -1344,41 +1032,41 @@ def page_home(df: pd.DataFrame | None):
                 f"""
                 <div class="glass-card" style="border-left: 6px solid #34d399; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
                     <div style="font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 800; color: #a7f3d0;">
-                        ✅ LOGGED IN AS: {st.session_state.logged_user}
+                        ✅ {t("welcome_user", lang)}: {st.session_state.logged_user}
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            if st.button("🚪 Logout", key="modal_logout_btn"):
+            if st.button(f"🚪 {t('logout', lang)}", key="modal_logout_btn"):
                 st.session_state.is_logged_in = False
                 st.session_state.logged_user = ""
                 st.session_state.logged_role = ""
                 st.session_state.show_login = False
-                st.toast("Logged out!", icon="🚪")
+                st.toast(t("logged_out_toast", lang), icon="🚪")
                 st.rerun()
         else:
             st.markdown(
-                """
+                f"""
                 <div class="glass-card" style="border-left: 6px solid #818cf8; background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%); margin-top: 0.5rem; padding: 1.2rem;">
                     <div style="font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 800; color: #ffffff;">
-                        🔐 SURAKSHA AI USER AUTHENTICATION
+                        {t("auth_header", lang)}
                     </div>
                     <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.2rem;">
-                        Create a new account or log in to your existing account. All accounts are saved for future logins.
+                        {t("auth_desc", lang)}
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
             
-            tab_login, tab_register = st.tabs(["🔑 Login to Account", "📝 Create New Account"])
+            tab_login, tab_register = st.tabs([t("tab_login", lang), t("tab_register", lang)])
             
             with tab_login:
                 with st.form("form_login_authenticated"):
-                    login_user_id = st.text_input("Mobile / Email", placeholder="e.g. varshini@gmail.com or 9876543210", key="login_id_in")
-                    login_password = st.text_input("Password", type="password", placeholder="••••••••", key="login_pass_in")
-                    submit_login = st.form_submit_button("🔓 Login", use_container_width=True)
+                    login_user_id = st.text_input(t("login_user_id", lang), placeholder="e.g. varshini@gmail.com or 9876543210", key="login_id_in")
+                    login_password = st.text_input(t("login_password", lang), type="password", placeholder="••••••••", key="login_pass_in")
+                    submit_login = st.form_submit_button(t("login_submit", lang), use_container_width=True)
 
                 if submit_login:
                     success, user_info_or_error = auth.authenticate_user(login_user_id, login_password)
@@ -1388,22 +1076,22 @@ def page_home(df: pd.DataFrame | None):
                         st.session_state.logged_user = user_info["name"]
                         st.session_state.logged_role = user_info.get("role", "User")
                         st.session_state.show_login = False
-                        st.toast(f"Welcome back, {user_info['name']}!", icon="🎉")
+                        st.toast(f"{t('welcome_user', lang)}, {user_info['name']}!", icon="🎉")
                         st.rerun()
                     else:
                         st.error(user_info_or_error)
 
             with tab_register:
                 with st.form("form_register_account"):
-                    reg_full_name = st.text_input("Full Name", placeholder="e.g. Varshini", key="reg_name_in")
-                    reg_user_id = st.text_input("Mobile / Email", placeholder="e.g. varshini@gmail.com or 9876543210", key="reg_id_in")
-                    reg_password = st.text_input("Create Password", type="password", placeholder="••••••••", key="reg_pass_in")
-                    reg_confirm_pass = st.text_input("Confirm Password", type="password", placeholder="••••••••", key="reg_pass_confirm_in")
-                    submit_register = st.form_submit_button("✨ Create Account & Login", use_container_width=True)
+                    reg_full_name = st.text_input(t("reg_full_name", lang), placeholder="e.g. Varshini", key="reg_name_in")
+                    reg_user_id = st.text_input(t("login_user_id", lang), placeholder="e.g. varshini@gmail.com or 9876543210", key="reg_id_in")
+                    reg_password = st.text_input(t("reg_password", lang), type="password", placeholder="••••••••", key="reg_pass_in")
+                    reg_confirm_pass = st.text_input(t("reg_confirm_password", lang), type="password", placeholder="••••••••", key="reg_pass_confirm_in")
+                    submit_register = st.form_submit_button(t("reg_submit", lang), use_container_width=True)
 
                 if submit_register:
                     if reg_password.strip() != reg_confirm_pass.strip():
-                        st.error("❌ Passwords do not match. Please re-enter your password.")
+                        st.error(t("pass_mismatch", lang))
                     else:
                         reg_success, reg_msg = auth.register_user(reg_full_name, "User", reg_user_id, reg_password)
                         if reg_success:
@@ -1411,24 +1099,24 @@ def page_home(df: pd.DataFrame | None):
                             st.session_state.logged_user = reg_full_name.strip()
                             st.session_state.logged_role = "User"
                             st.session_state.show_login = False
-                            st.toast(f"Account created! Welcome, {reg_full_name.strip()}!", icon="🎉")
+                            st.toast(f"{t('welcome_user', lang)}, {reg_full_name.strip()}!", icon="🎉")
                             st.rerun()
                         else:
                             st.error(reg_msg)
 
-        if st.button("✖ Close Authentication Drawer", key="close_login_btn"):
+        if st.button(t("close_auth", lang), key="close_login_btn"):
             st.session_state.show_login = False
             st.rerun()
 
     # 3. Rotating Thought Carousel (Lightweight)
-    render_animated_quote_carousel()
+    render_animated_quote_carousel(lang)
 
     # 4. Official Lightweight Feature Showcase Cards (6 Compact Cards)
     st.markdown(
-        """
+        f"""
         <div style="margin-top: 1rem; margin-bottom: 0.6rem;">
             <div style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 800; color: #f3f4f6;">
-                🛡️ System Modules & Features
+                {t("system_modules", lang)}
             </div>
         </div>
         """,
@@ -1438,30 +1126,30 @@ def page_home(df: pd.DataFrame | None):
     feat_c1, feat_c2, feat_c3 = st.columns(3)
     with feat_c1:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #818cf8; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #818cf8; font-family: 'Outfit';">🛣️ Safe Route Navigator</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Turn-by-turn routing with safe (🟢) vs unsafe (🔴) bypass risk index scoring & step HUD.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #818cf8; font-family: 'Outfit';">{t("feat_route_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_route_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with feat_c2:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #ef4444; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #fca5a5; font-family: 'Outfit';">🚨 Police Station Locator</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Finds #1 nearest police station with direct 112 dialing & turn-by-turn driving directions.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #fca5a5; font-family: 'Outfit';">{t("feat_police_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_police_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with feat_c3:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #38bdf8; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #38bdf8; font-family: 'Outfit';">📍 City & District Explorer</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Historical safety trends, crime rates per 100k, and risk profiles across 182 districts.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #38bdf8; font-family: 'Outfit';">{t("feat_city_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_city_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1472,30 +1160,30 @@ def page_home(df: pd.DataFrame | None):
     feat_c4, feat_c5, feat_c6 = st.columns(3)
     with feat_c4:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #a855f7; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #c084fc; font-family: 'Outfit';">🧠 AI Risk Simulator</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Interactive Keras Deep Neural Network model predicting district safety risk labels.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #c084fc; font-family: 'Outfit';">{t("feat_ai_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_ai_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with feat_c5:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #34d399; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #34d399; font-family: 'Outfit';">🗺️ India GIS Risk Map</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Spatial geographic distribution heatmap visualizing risk tiers across 35 States & UTs.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #34d399; font-family: 'Outfit';">{t("feat_gis_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_gis_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
     with feat_c6:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1rem; border-top: 3px solid #f59e0b; height: 100%;">
-                <div style="font-weight: 700; font-size: 1.05rem; color: #fbbf24; font-family: 'Outfit';">📊 District Leaderboard</div>
-                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">Quantile risk ranking, safest vs most vulnerable district league tables & spatial sorting.</div>
+                <div style="font-weight: 700; font-size: 1.05rem; color: #fbbf24; font-family: 'Outfit';">{t("feat_rank_title", lang)}</div>
+                <div style="color: #9ca3af; font-size: 0.84rem; margin-top: 0.3rem; line-height: 1.4;">{t("feat_rank_desc", lang)}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1509,17 +1197,17 @@ def page_home(df: pd.DataFrame | None):
             st.markdown(
                 f"""
                 <div class="stat-metric-card" style="padding: 0.8rem;">
-                    <div class="stat-label">Coverage Universe</div>
-                    <div class="stat-value" style="font-size: 1.25rem;">{df['city'].nunique()} Districts</div>
+                    <div class="stat-label">{t("coverage_universe", lang)}</div>
+                    <div class="stat-value" style="font-size: 1.25rem;">{df['city'].nunique()} {t("districts_count", lang)}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
         with col2:
             st.markdown(
-                """
+                f"""
                 <div class="stat-metric-card" style="padding: 0.8rem;">
-                    <div class="stat-label">Timeline</div>
+                    <div class="stat-label">{t("timeline_label", lang)}</div>
                     <div class="stat-value" style="font-size: 1.25rem;">2001 – 2026</div>
                 </div>
                 """,
@@ -1527,9 +1215,9 @@ def page_home(df: pd.DataFrame | None):
             )
         with col3:
             st.markdown(
-                """
+                f"""
                 <div class="stat-metric-card" style="padding: 0.8rem;">
-                    <div class="stat-label">AI Accuracy</div>
+                    <div class="stat-label">{t("ai_accuracy", lang)}</div>
                     <div class="stat-value" style="font-size: 1.25rem; color: #34d399;">96.57%</div>
                 </div>
                 """,
@@ -1537,10 +1225,10 @@ def page_home(df: pd.DataFrame | None):
             )
         with col4:
             st.markdown(
-                """
+                f"""
                 <div class="stat-metric-card" style="padding: 0.8rem;">
-                    <div class="stat-label">Geographic Scope</div>
-                    <div class="stat-value" style="font-size: 1.25rem;">35 States & UTs</div>
+                    <div class="stat-label">{t("geographic_scope", lang)}</div>
+                    <div class="stat-value" style="font-size: 1.25rem;">{t("states_scope", lang)}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1548,18 +1236,18 @@ def page_home(df: pd.DataFrame | None):
 
     # Instant City Safety Quick Lookup Widget
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='color: #ffffff !important; font-weight: 800; font-size: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.8rem;'>🔍 Quick Safety Search</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color: #ffffff !important; font-weight: 800; font-size: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.8rem;'>{t('quick_search_title', lang)}</h3>", unsafe_allow_html=True)
     if df is not None:
         quick_c1, quick_c2 = st.columns([3, 1])
         with quick_c1:
             quick_city = st.selectbox(
-                "Search Location",
+                t("search_location_label", lang),
                 sorted(df["city"].dropna().unique()),
                 index=0,
                 key="home_quick_city"
             )
         with quick_c2:
-            quick_year = st.selectbox("Year", sorted(df["year"].unique(), reverse=True), key="home_quick_year")
+            quick_year = st.selectbox(t("year_label", lang), sorted(df["year"].unique(), reverse=True), key="home_quick_year")
         
         q_row = df[(df["city"] == quick_city) & (df["year"] == quick_year)]
         if not q_row.empty:
@@ -1577,20 +1265,20 @@ def page_home(df: pd.DataFrame | None):
                             <h4 style="margin: 0; font-family: 'Outfit', sans-serif; color: #f3f4f6;">📍 {qr['city']}, {qr['state']} ({quick_year})</h4>
                         </div>
                         <div>
-                            <div class="{p_class}" style="font-size: 0.88rem; padding: 4px 12px;">{risk} RISK TIER</div>
+                            <div class="{p_class}" style="font-size: 0.88rem; padding: 4px 12px;">{risk} {t("risk_tier", lang).upper()}</div>
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.6rem;">
                         <div>
-                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">Crime Rate (per 100k)</div>
+                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">{t("crime_rate", lang)}</div>
                             <div style="font-size: 1.15rem; font-weight: 700; color: #f3f4f6;">{qr['crime_rate']:.2f}</div>
                         </div>
                         <div>
-                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">Total Reported Cases</div>
+                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">{t("reported_cases", lang)}</div>
                             <div style="font-size: 1.15rem; font-weight: 700; color: #f3f4f6;">{int(qr['total_crimes_against_women']):,}</div>
                         </div>
                         <div>
-                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">YoY Trajectory</div>
+                            <div style="font-size: 0.72rem; color: #9ca3af; text-transform: uppercase;">{t("yoy_trajectory", lang)}</div>
                             <div style="font-size: 1.15rem; font-weight: 700; color: #34d399;">{slope_val:+.2f} / year</div>
                         </div>
                     </div>
@@ -1601,15 +1289,15 @@ def page_home(df: pd.DataFrame | None):
 
     # Emergency Helplines Section (Crucial Safety Info for Users)
     st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
-    st.markdown("### 🚨 Emergency Helplines")
+    st.markdown(f"### {t('emergency_helplines', lang)}")
     h1, h2, h3, h4 = st.columns(4)
     with h1:
         st.markdown(
-            """
+            f"""
             <a href="tel:112" style="text-decoration: none;">
                 <div class="glass-card" style="text-align: center; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); padding: 0.8rem; cursor: pointer;">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #ef4444; font-family: 'Outfit';">📞 112</div>
-                    <div style="font-size: 0.78rem; color: #fca5a5;">National Emergency (Call)</div>
+                    <div style="font-size: 0.78rem; color: #fca5a5;">{t("helpline_national", lang)}</div>
                 </div>
             </a>
             """,
@@ -1617,11 +1305,11 @@ def page_home(df: pd.DataFrame | None):
         )
     with h2:
         st.markdown(
-            """
+            f"""
             <a href="tel:1091" style="text-decoration: none;">
                 <div class="glass-card" style="text-align: center; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.08); padding: 0.8rem; cursor: pointer;">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #a855f7; font-family: 'Outfit';">👩 1091</div>
-                    <div style="font-size: 0.78rem; color: #e9d5ff;">Women Helpline (Call)</div>
+                    <div style="font-size: 0.78rem; color: #e9d5ff;">{t("helpline_women", lang)}</div>
                 </div>
             </a>
             """,
@@ -1629,11 +1317,11 @@ def page_home(df: pd.DataFrame | None):
         )
     with h3:
         st.markdown(
-            """
+            f"""
             <a href="tel:1930" style="text-decoration: none;">
                 <div class="glass-card" style="text-align: center; border: 1px solid rgba(6, 182, 212, 0.35); background: rgba(6, 182, 212, 0.08); padding: 0.8rem; cursor: pointer;">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #06b6d4; font-family: 'Outfit';">💻 1930</div>
-                    <div style="font-size: 0.78rem; color: #cffaff;">Cyber Crime Helpline (Call)</div>
+                    <div style="font-size: 0.78rem; color: #cffaff;">{t("helpline_cyber", lang)}</div>
                 </div>
             </a>
             """,
@@ -1641,11 +1329,11 @@ def page_home(df: pd.DataFrame | None):
         )
     with h4:
         st.markdown(
-            """
+            f"""
             <a href="tel:1098" style="text-decoration: none;">
                 <div class="glass-card" style="text-align: center; border: 1px solid rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); padding: 0.8rem; cursor: pointer;">
                     <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; font-family: 'Outfit';">👧 1098</div>
-                    <div style="font-size: 0.78rem; color: #a7f3d0;">Childline India (Call)</div>
+                    <div style="font-size: 0.78rem; color: #a7f3d0;">{t("helpline_child", lang)}</div>
                 </div>
             </a>
             """,
@@ -1655,13 +1343,13 @@ def page_home(df: pd.DataFrame | None):
     # 6. Voices of Empowerment & Women Safety (Designful Section)
     st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
     st.markdown(
-        """
+        f"""
         <div style="text-align: center; margin-bottom: 1.5rem;">
             <div style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                🌸 Empowering Women, Protecting Dignity
+                {t("empower_header", lang)}
             </div>
             <div style="color: #9ca3af; font-size: 0.95rem; margin-top: 0.3rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-                Standing together to build a safer, more equal, and confident tomorrow for every woman across India.
+                {t("empower_subtitle", lang)}
             </div>
         </div>
         """,
@@ -1671,14 +1359,14 @@ def page_home(df: pd.DataFrame | None):
     emp_col1, emp_col2 = st.columns(2)
     with emp_col1:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1.5rem; border-left: 4px solid #f43f5e; background: linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);">
                 <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">💖</div>
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #fda4af;">
-                    Freedom Without Fear
+                    {t("empower_card1_title", lang)}
                 </div>
                 <div style="color: #cbd5e1; font-size: 0.9rem; margin-top: 0.4rem; line-height: 1.6;">
-                    “Safety is not a privilege to be requested; it is a fundamental human right guaranteed to every woman. True freedom is walking any street, at any hour, with absolute peace of mind.”
+                    {t("empower_card1_desc", lang)}
                 </div>
             </div>
             """,
@@ -1686,14 +1374,14 @@ def page_home(df: pd.DataFrame | None):
         )
         st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1.5rem; border-left: 4px solid #38bdf8; background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);">
                 <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🌟</div>
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #7dd3fc;">
-                    Catalyst for National Progress
+                    {t("empower_card2_title", lang)}
                 </div>
                 <div style="color: #cbd5e1; font-size: 0.9rem; margin-top: 0.4rem; line-height: 1.6;">
-                    “When women feel secure and empowered, communities transform, families prosper, and entire nations reach new heights of innovation and equality.”
+                    {t("empower_card2_desc", lang)}
                 </div>
             </div>
             """,
@@ -1702,14 +1390,14 @@ def page_home(df: pd.DataFrame | None):
 
     with emp_col2:
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1.5rem; border-left: 4px solid #a855f7; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);">
                 <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🛡️</div>
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #e9d5ff;">
-                    Technology as a Shield
+                    {t("empower_card3_title", lang)}
                 </div>
                 <div style="color: #cbd5e1; font-size: 0.9rem; margin-top: 0.4rem; line-height: 1.6;">
-                    “SURAKSHA AI bridges advanced data science, geospatial intelligence, and emergency infrastructure to provide real-time proactive protection for every citizen.”
+                    {t("empower_card3_desc", lang)}
                 </div>
             </div>
             """,
@@ -1717,14 +1405,14 @@ def page_home(df: pd.DataFrame | None):
         )
         st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
         st.markdown(
-            """
+            f"""
             <div class="glass-card" style="padding: 1.5rem; border-left: 4px solid #34d399; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);">
                 <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">✊</div>
                 <div style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; color: #a7f3d0;">
-                    Unity & Vigilance
+                    {t("empower_card4_title", lang)}
                 </div>
                 <div style="color: #cbd5e1; font-size: 0.9rem; margin-top: 0.4rem; line-height: 1.6;">
-                    “Building a safer environment requires collective awareness, transparent safety metrics, and swift emergency action. Together, we pave the way for progress.”
+                    {t("empower_card4_desc", lang)}
                 </div>
             </div>
             """,
@@ -1734,14 +1422,14 @@ def page_home(df: pd.DataFrame | None):
     # 7. Inspiring Women Safety Mission Statement Banner
     st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
     st.markdown(
-        """
+        f"""
         <div class="glass-card" style="padding: 2rem; text-align: center; background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 50%, rgba(244, 63, 94, 0.15) 100%); border: 1px solid rgba(168, 85, 247, 0.3);">
             <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">👑</div>
             <div style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">
-                “Empower a Woman, Safeguard a Nation”
+                {t("empower_banner_title", lang)}
             </div>
             <div style="color: #cbd5e1; font-size: 0.95rem; max-width: 800px; margin: 0.6rem auto 0 auto; line-height: 1.6;">
-                SURAKSHA AI is dedicated to transforming public spatial safety across India. Through spatial route risk scoring, 24x7 police locator tools, and AI prediction, we empower women to navigate every journey with total peace of mind.
+                {t("empower_banner_desc", lang)}
             </div>
         </div>
         """,
@@ -1750,12 +1438,12 @@ def page_home(df: pd.DataFrame | None):
     st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
 
 
-def page_city_analysis(df: pd.DataFrame | None):
+def page_city_analysis(df: pd.DataFrame | None, lang: str = "English"):
     st.markdown(
-        """
+        f"""
         <div class="hero-header">
-            <div class="hero-title">📍 City & District Explorer</div>
-            <div class="hero-subtitle">Inspect historical risk trends, population-adjusted crime rates, and 2026 forecast profiles for any city or district.</div>
+            <div class="hero-title">{t("explorer_title", lang)}</div>
+            <div class="hero-subtitle">{t("explorer_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1765,34 +1453,37 @@ def page_city_analysis(df: pd.DataFrame | None):
         return
 
     col_search_type, _ = st.columns([2, 2])
+    opt_state = "Filter by State" if lang == "English" else ("ರಾಜ್ಯದ ಪ್ರಕಾರ ಫಿಲ್ಟರ್ ಮಾಡಿ" if lang == "Kannada" else "राज्य द्वारा फ़िल्टर करें")
+    opt_direct = "Search All Cities Directly" if lang == "English" else ("ಎಲ್ಲಾ ನಗರಗಳನ್ನು ನೇರವಾಗಿ ಹುಡುಕಿ" if lang == "Kannada" else "सभी शहरों को सीधे खोजें")
+    
     with col_search_type:
-        search_mode = st.radio("Search Mode", ["Filter by State", "Search All Cities Directly"], horizontal=True)
+        search_mode = st.radio("Search Mode", [opt_state, opt_direct], horizontal=True, label_visibility="collapsed")
 
     all_states = sorted(df["state"].dropna().unique())
     all_cities = sorted(df["city"].dropna().unique())
 
-    if search_mode == "Filter by State":
+    if search_mode == opt_state:
         col_s, col_c, col_y = st.columns(3)
         with col_s:
-            state = st.selectbox("State", all_states, key="city_analysis_state")
+            state = st.selectbox(t("select_state", lang), all_states, key="city_analysis_state")
         
         cities_in_state = sorted(df[df["state"] == state]["city"].dropna().unique())
         with col_c:
-            city = st.selectbox("City / District", cities_in_state, key="city_analysis_city_by_state")
+            city = st.selectbox(t("select_city", lang), cities_in_state, key="city_analysis_city_by_state")
     else:
         col_c, col_y = st.columns([2, 1])
         with col_c:
-            city = st.selectbox("Search City or District (All India)", all_cities, key="city_analysis_city_direct")
+            city = st.selectbox(t("select_city", lang), all_cities, key="city_analysis_city_direct")
         city_rows = df[df["city"] == city]
         state = city_rows["state"].iloc[0] if not city_rows.empty else ""
 
     years = sorted(df[df["city"] == city]["year"].dropna().unique())
-    if search_mode == "Filter by State":
+    if search_mode == opt_state:
         with col_y:
-            year = st.selectbox("Year Target", years, index=len(years) - 1, key="city_analysis_year")
+            year = st.selectbox(t("year_label", lang), years, index=len(years) - 1, key="city_analysis_year")
     else:
         with col_y:
-            year = st.selectbox("Year Target", years, index=len(years) - 1, key="city_analysis_year_direct")
+            year = st.selectbox(t("year_label", lang), years, index=len(years) - 1, key="city_analysis_year_direct")
 
     row = df[(df["city"] == city) & (df["year"] == year)]
     if row.empty:
@@ -1819,7 +1510,7 @@ def page_city_analysis(df: pd.DataFrame | None):
                     <div style="color: #9ca3af; font-size: 0.95rem;">State/UT: <b>{state}</b> &nbsp;•&nbsp; Target Year: <b>{year}</b></div>
                 </div>
                 <div style="margin-top: 0.5rem;">
-                    <div class="{pill_class}">{risk_label} RISK TIER</div>
+                    <div class="{pill_class}">{risk_label} {t("risk_tier", lang).upper()}</div>
                 </div>
             </div>
         </div>
@@ -1829,14 +1520,14 @@ def page_city_analysis(df: pd.DataFrame | None):
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.metric("Crime Rate (per 100k)", f"{row['crime_rate']:.2f}", delta=rate_delta)
+        st.metric(t("crime_rate", lang), f"{row['crime_rate']:.2f}", delta=rate_delta)
     with c2:
-        st.metric("Total Reported Cases", f"{int(row['total_crimes_against_women']):,}")
+        st.metric(t("reported_cases", lang), f"{int(row['total_crimes_against_women']):,}")
     with c3:
-        st.metric("Risk Classification", risk_label)
+        st.metric(t("risk_tier", lang), risk_label)
     with c4:
         pop_str = f"{int(row['population']):,}" if "population" in row and pd.notna(row["population"]) else "N/A"
-        st.metric("Estimated Population", pop_str)
+        st.metric(t("population", lang), pop_str)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1854,15 +1545,15 @@ def page_city_analysis(df: pd.DataFrame | None):
         st.plotly_chart(fig_comp, use_container_width=True)
 
 
-def page_risk_prediction(df: pd.DataFrame | None, artifacts):
+def page_risk_prediction(df: pd.DataFrame | None, artifacts, lang: str = "English"):
     st.markdown(
-        """
+        f"""
         <div class="hero-header" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(30, 27, 75, 0.85) 100%); border: 1px solid rgba(168, 85, 247, 0.35);">
             <div style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
                 🧠 DEEP NEURAL NETWORK SIMULATOR
             </div>
-            <div class="hero-title" style="color: #ffffff;">🧠 AI Risk Simulator</div>
-            <div class="hero-subtitle">Select any Indian City or District and Target Projection Year to run deep neural network risk classification and view probability distributions.</div>
+            <div class="hero-title" style="color: #ffffff;">{t("sim_title", lang)}</div>
+            <div class="hero-subtitle">{t("sim_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1881,10 +1572,10 @@ def page_risk_prediction(df: pd.DataFrame | None, artifacts):
     if df is not None:
         c1, c2 = st.columns(2)
         with c1:
-            city = st.selectbox("📍 Select City / District:", sorted(df["city"].dropna().unique()), key="pred_city")
+            city = st.selectbox(f"📍 {t('select_city', lang)}", sorted(df["city"].dropna().unique()), key="pred_city")
         years = sorted(df[df["city"] == city]["year"].dropna().unique())
         with c2:
-            year = st.selectbox("📅 Select Target Year:", years, index=len(years) - 1, key="pred_year")
+            year = st.selectbox(f"📅 {t('sim_year', lang)}", years, index=len(years) - 1, key="pred_year")
         
         row = df[(df["city"] == city) & (df["year"] == year)]
         if not row.empty:
@@ -1893,7 +1584,7 @@ def page_risk_prediction(df: pd.DataFrame | None, artifacts):
                     values[f] = float(row.iloc[0][f]) if pd.notna(row.iloc[0][f]) else 0.0
 
     st.markdown("<br>", unsafe_allow_html=True)
-    run_sim_btn = st.button("🔮 RUN AI RISK PREDICTION FOR SELECTED LOCATION", use_container_width=True)
+    run_sim_btn = st.button(t("sim_btn", lang), use_container_width=True)
 
     if run_sim_btn or "sim_run_active" in st.session_state:
         st.session_state["sim_run_active"] = True
@@ -1910,7 +1601,7 @@ def page_risk_prediction(df: pd.DataFrame | None, artifacts):
                     🤖 DEEP NEURAL NETWORK PREDICTION RESULT
                 </div>
                 <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                    <div class="{pill_class}" style="font-size: 1.5rem; padding: 10px 22px;">PREDICTED RISK TIER: {risk}</div>
+                    <div class="{pill_class}" style="font-size: 1.5rem; padding: 10px 22px;">{t('sim_predicted_tier', lang)} {risk}</div>
                     <div style="font-size: 1.2rem; color: #ffffff; font-weight: 700;">
                         Model Confidence: <span style="color: #34d399; font-weight: 900;">{result['model_confidence']:.1%}</span>
                     </div>
@@ -1931,12 +1622,12 @@ def page_risk_prediction(df: pd.DataFrame | None, artifacts):
         st.bar_chart(prob_df.set_index("Risk Class"))
 
 
-def page_india_map(df: pd.DataFrame | None):
+def page_india_map(df: pd.DataFrame | None, lang: str = "English"):
     st.markdown(
-        """
+        f"""
         <div class="hero-header">
-            <div class="hero-title">🗺️ India Interactive GIS Risk Map</div>
-            <div class="hero-subtitle">Geographic risk distribution visualization across 182 Indian cities and districts.</div>
+            <div class="hero-title">{t("gis_title", lang)}</div>
+            <div class="hero-subtitle">{t("gis_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1949,7 +1640,7 @@ def page_india_map(df: pd.DataFrame | None):
         st.warning("No geographic coordinate data present.")
         return
 
-    year = st.selectbox("Select Map Year Timeline", sorted(df["year"].unique()), index=len(df["year"].unique()) - 1)
+    year = st.selectbox(t("year_label", lang), sorted(df["year"].unique()), index=len(df["year"].unique()) - 1)
     sub = df[df["year"] == year].dropna(subset=["latitude", "longitude"])
     
     try:
@@ -1974,12 +1665,12 @@ def page_india_map(df: pd.DataFrame | None):
         st.map(sub[["latitude", "longitude"]], zoom=4)
 
 
-def page_district_matrix(df: pd.DataFrame | None):
+def page_district_matrix(df: pd.DataFrame | None, lang: str = "English"):
     st.markdown(
-        """
+        f"""
         <div class="hero-header">
-            <div class="hero-title">📊 District Ranking Leaderboard</div>
-            <div class="hero-subtitle">Search, filter, and inspect risk tiers and crime rates across 182 Indian cities and districts.</div>
+            <div class="hero-title">{t("leaderboard_title", lang)}</div>
+            <div class="hero-subtitle">{t("leaderboard_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1992,9 +1683,10 @@ def page_district_matrix(df: pd.DataFrame | None):
     with c1:
         search_query = st.text_input("🔍 Search City, District or State", placeholder="e.g. Bengaluru, Mysuru, Pune, Karnataka...")
     with c2:
-        year_sel = st.selectbox("Select Year", sorted(df["year"].unique(), reverse=True), key="matrix_year")
+        year_sel = st.selectbox(t("year_label", lang), sorted(df["year"].unique(), reverse=True), key="matrix_year")
     with c3:
-        risk_filter = st.selectbox("Filter Risk Tier", ["All Tiers", "HIGH", "MEDIUM", "LOW"], key="matrix_risk_filter")
+        tier_label = t("risk_tier", lang)
+        risk_filter = st.selectbox(tier_label, ["All Tiers", "HIGH", "MEDIUM", "LOW"], key="matrix_risk_filter")
 
     df_year = df[df["year"] == year_sel].copy()
 
@@ -2012,13 +1704,13 @@ def page_district_matrix(df: pd.DataFrame | None):
     
     display_cols = ["city", "state", "year", "crime_rate", "total_crimes_against_women", "population", "risk_label"]
     rename_dict = {
-        "city": "City / District",
-        "state": "State / UT",
-        "year": "Year",
-        "crime_rate": "Crime Rate (per 100k)",
-        "total_crimes_against_women": "Total Reported Cases",
-        "population": "Population",
-        "risk_label": "Risk Tier"
+        "city": t("col_district", lang),
+        "state": t("col_state", lang),
+        "year": t("year_label", lang),
+        "crime_rate": t("col_rate", lang),
+        "total_crimes_against_women": t("col_cases", lang),
+        "population": t("col_pop", lang),
+        "risk_label": t("col_tier", lang)
     }
     
     view_df = df_year[[c for c in display_cols if c in df_year.columns]].rename(columns=rename_dict)
@@ -2811,15 +2503,15 @@ def render_folium_police_map(user_lat: float, user_lon: float, location_descript
         st.map(map_df, zoom=12, use_container_width=True)
 
 
-def page_police_stations(df_police: pd.DataFrame | None):
+def page_police_stations(df_police: pd.DataFrame | None, lang: str = "English"):
     st.markdown(
-        """
+        f"""
         <div class="hero-header" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border: 1px solid rgba(239, 68, 68, 0.3);">
             <div style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
-                🚨 24/7 ACTIVE POLICE & EMERGENCY ASSISTANCE DESK
+                {t("police_hero_tag", lang)}
             </div>
-            <div class="hero-title" style="color: #ffffff;">🚨 Nearest Police Station Locator</div>
-            <div class="hero-subtitle">Search any location to locate the single nearest police station with turn-by-turn navigation.</div>
+            <div class="hero-title" style="color: #ffffff;">{t("police_hero_title", lang)}</div>
+            <div class="hero-subtitle">{t("police_hero_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -2831,34 +2523,34 @@ def page_police_stations(df_police: pd.DataFrame | None):
 
     # 1. Emergency Hotlines Quick Action Bar
     st.markdown(
-        """
+        f"""
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
             <a href="tel:112" style="text-decoration: none;">
                 <div class="glass-card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35)); border-color: rgba(239, 68, 68, 0.5); text-align: center; padding: 0.9rem;">
                     <div style="font-size: 1.5rem;">🚨</div>
                     <div style="font-weight: 800; font-size: 1.2rem; color: #fecdd3;">112</div>
-                    <div style="font-size: 0.75rem; color: #fda4af;">National Emergency (Call)</div>
+                    <div style="font-size: 0.75rem; color: #fda4af;">{t("helpline_national", lang)}</div>
                 </div>
             </a>
             <a href="tel:1091" style="text-decoration: none;">
                 <div class="glass-card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(190, 24, 93, 0.35)); border-color: rgba(236, 72, 153, 0.5); text-align: center; padding: 0.9rem;">
                     <div style="font-size: 1.5rem;">🌸</div>
                     <div style="font-weight: 800; font-size: 1.2rem; color: #fbcfe8;">1091</div>
-                    <div style="font-size: 0.75rem; color: #f472b6;">Women Helpline (Call)</div>
+                    <div style="font-size: 0.75rem; color: #f472b6;">{t("helpline_women", lang)}</div>
                 </div>
             </a>
             <a href="tel:1930" style="text-decoration: none;">
                 <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(67, 56, 202, 0.35)); border-color: rgba(99, 102, 241, 0.5); text-align: center; padding: 0.9rem;">
                     <div style="font-size: 1.5rem;">💻</div>
                     <div style="font-weight: 800; font-size: 1.2rem; color: #c7d2fe;">1930</div>
-                    <div style="font-size: 0.75rem; color: #a5b4fc;">Cyber Helpline (Call)</div>
+                    <div style="font-size: 0.75rem; color: #a5b4fc;">{t("helpline_cyber", lang)}</div>
                 </div>
             </a>
             <a href="tel:1098" style="text-decoration: none;">
                 <div class="glass-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(180, 83, 9, 0.35)); border-color: rgba(245, 158, 11, 0.5); text-align: center; padding: 0.9rem;">
                     <div style="font-size: 1.5rem;">👧</div>
                     <div style="font-weight: 800; font-size: 1.2rem; color: #fef08a;">1098</div>
-                    <div style="font-size: 0.75rem; color: #fde047;">Childline India (Call)</div>
+                    <div style="font-size: 0.75rem; color: #fde047;">{t("helpline_child", lang)}</div>
                 </div>
             </a>
         </div>
@@ -2867,116 +2559,27 @@ def page_police_stations(df_police: pd.DataFrame | None):
     )
 
     # 2. Location Input (Search Bar)
-    st.markdown("<h4 style='color: #f3f4f6; margin-bottom: 0.4rem;'>🗺️ Search Location</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color: #f3f4f6; margin-bottom: 0.4rem;'>{t('search_police_header', lang)}</h4>", unsafe_allow_html=True)
     
     col_in1, col_in2 = st.columns([2.5, 1])
 
-    popular_places = [
-        # Hassan District
-        "BM Road, Hassan",
-        "Pension Mohalla, Hassan",
-        "Kuvempu Nagar, Hassan",
-        "Shravanabelagola, Hassan",
-        "Arsikere, Hassan",
-        "Sakleshpur, Hassan",
-        "Belur, Hassan",
-        "Halebeedu, Hassan",
-        "Gorur Dam, Hassan",
-        "Holenarasipura, Hassan",
-        "Arkalgud, Hassan",
-        "Alur, Hassan",
-        "Dudda, Hassan",
-        "Shantigrama, Hassan",
-        "Banavara, Hassan",
-        # Bengaluru Urban & Rural
-        "Koramangala, Bengaluru",
-        "Indiranagar, Bengaluru",
-        "Whitefield, Bengaluru",
-        "Electronic City, Bengaluru",
-        "Jayanagar, Bengaluru",
-        "Malleshwaram, Bengaluru",
-        "Hebbal, Bengaluru",
-        "Yelahanka, Bengaluru",
-        "Nelamangala, Bengaluru Rural",
-        "Doddaballapura, Bengaluru Rural",
-        "Devanahalli, Bengaluru Rural",
-        # Mysuru & Mandya & Ramanagara
-        "Mysuru City",
-        "Devaraja Mohalla, Mysuru",
-        "Saraswathipuram, Mysuru",
-        "Nanjangud, Mysuru",
-        "Srirangapatna, Mandya",
-        "Mandya City",
-        "Ramanagara Town",
-        "Channapatna, Ramanagara",
-        # Coastal Karnataka
-        "Mangaluru (Pandeshwar)",
-        "Kadri Hills, Mangaluru",
-        "Puttur, Dakshina Kannada",
-        "Udupi Town",
-        "Manipal, Udupi",
-        "Kundapura, Udupi",
-        "Sirsi, Uttara Kannada",
-        "Karwar, Uttara Kannada",
-        "Gokarna Beach, Uttara Kannada",
-        "Dandeli, Uttara Kannada",
-        # Malnad & Kodagu
-        "Madikeri, Kodagu",
-        "Somwarpet, Kodagu",
-        "Virajpet, Kodagu",
-        "Kushalnagar, Kodagu",
-        "Chikkamagaluru Town",
-        "Kadur, Chikkamagaluru",
-        "Shivamogga City",
-        "Bhadravathi, Shivamogga",
-        "Sagar, Shivamogga",
-        # Northern & Central Karnataka
-        "Belagavi City",
-        "Gokak, Belagavi",
-        "Chikkodi, Belagavi",
-        "Hubballi (Gokul Road)",
-        "Vidyagiri, Dharwad",
-        "Kalaburagi City",
-        "Shahapur, Yadgir",
-        "Yadgir Town",
-        "Bidar Fort",
-        "Raichur Town",
-        "Ballari City",
-        "Hospet, Vijayanagara",
-        "Hampi, Vijayanagara",
-        "Davanagere City",
-        "Harihar, Davanagere",
-        "Chitradurga Fort",
-        "Tumakuru City",
-        "Tiptur, Tumakuru",
-        "Badami, Bagalkote",
-        "Bagalkote Town",
-        "Vijayapura City",
-        "Gadag City",
-        "Haveri Town",
-        "Ranebennur, Haveri",
-        "Koppal Town",
-        "Gangavathi, Koppal",
-        "Chikkaballapura Town",
-        "Chintamani, Chikkaballapura",
-        "Kolar City",
-        "Robertsonpet (KGF), Kolar",
-        "Chamarajanagara Town",
-        "Gundlupet, Chamarajanagara"
-    ]
-
     with col_in1:
         query_input = st.text_input(
-            "🔍 Search Location (Enter any Village, Town, Taluk, District, or 6-Digit PIN Code):",
+            f"🔍 {t('search_police_header', lang)}:",
             value=st.session_state.get("last_searched_place", ""),
-            placeholder="Type any village, town, or 6-digit PIN code (e.g. Hirisave, Sosale, Hassan, 573201...)",
+            placeholder=t("search_police_placeholder", lang),
             key="police_search_input_single"
         )
 
+    cat_all = t("cat_all", lang)
+    cat_women = t("cat_women", lang)
+    cat_cyber = t("cat_cyber", lang)
+    cat_gen = t("cat_general", lang)
+
     with col_in2:
         station_type_filter = st.selectbox(
-            "Police Category Filter:",
-            ["All Station Types", "🌸 All Women Police Station (AWPS) Only", "💻 Cyber Crime & Women Safety Cell Only", "🛡️ General Law & Order Only"]
+            t("police_category_label", lang),
+            [cat_all, cat_women, cat_cyber, cat_gen]
         )
 
     active_query = query_input.strip() or st.session_state.get("last_searched_place", "Hassan")
@@ -2991,11 +2594,11 @@ def page_police_stations(df_police: pd.DataFrame | None):
 
     # Filter dataframe by category
     filtered_df = df_police.copy()
-    if station_type_filter == "🌸 All Women Police Station (AWPS) Only":
+    if station_type_filter == cat_women or "Women" in station_type_filter or "ಮಹಿಳಾ" in station_type_filter or "महिला" in station_type_filter:
         filtered_df = filtered_df[filtered_df["station_type"].str.contains("Women", case=False, na=False)]
-    elif station_type_filter == "💻 Cyber Crime & Women Safety Cell Only":
+    elif station_type_filter == cat_cyber or "Cyber" in station_type_filter or "ಸೈಬರ್" in station_type_filter or "साइबर" in station_type_filter:
         filtered_df = filtered_df[filtered_df["station_type"].str.contains("Cyber", case=False, na=False)]
-    elif station_type_filter == "🛡️ General Law & Order Only":
+    elif station_type_filter == cat_gen or "General" in station_type_filter or "ಸಾಮಾನ್ಯ" in station_type_filter or "सामान्य" in station_type_filter:
         filtered_df = filtered_df[~filtered_df["station_type"].str.contains("Women|Cyber", case=False, regex=True, na=False)]
 
     if filtered_df.empty:
@@ -3029,7 +2632,7 @@ def page_police_stations(df_police: pd.DataFrame | None):
     top_1 = filtered_df.head(1)
 
     st.markdown("---")
-    st.markdown(f"<h3 style='color: #f3f4f6; font-family: Outfit, sans-serif;'>⚡ ACCURATE NEARBY POLICE STATION FOR SEARCHED PLACE: <span style='color: #818cf8;'>{location_description}</span></h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color: #f3f4f6; font-family: Outfit, sans-serif;'>⚡ {t('nearest_station_badge', lang)}: <span style='color: #818cf8;'>{location_description}</span></h3>", unsafe_allow_html=True)
 
     # Interactive Folium View showing the single closest police station
     render_folium_police_map(user_lat, user_lon, location_description, top_1)
@@ -3045,7 +2648,7 @@ def page_police_stations(df_police: pd.DataFrame | None):
 <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
 <div>
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-<span style="font-weight: 800; font-size: 0.92rem; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em;">🥇 #1 ACCURATE NEARBY POLICE STATION</span>
+<span style="font-weight: 800; font-size: 0.92rem; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em;">{t("nearest_station_badge", lang)}</span>
 <span style="padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; {badge_bg}">{st_row['station_type']}</span>
 </div>
 <div style="font-size: 1.7rem; font-weight: 800; color: #ffffff; font-family: 'Outfit', sans-serif;">
@@ -3059,7 +2662,7 @@ def page_police_stations(df_police: pd.DataFrame | None):
 </div>
 </div>
 <div style="text-align: right; background: rgba(17, 24, 39, 0.85); padding: 1rem 1.4rem; border-radius: 14px; border: 1.5px solid #10b981; min-width: 160px;">
-<div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; font-weight: 700;">ACCURATE DISTANCE</div>
+<div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; font-weight: 700;">{t("hud_distance", lang).upper()}</div>
 <div style="font-size: 2.1rem; font-weight: 900; color: #10b981; margin: 0.1rem 0;">
 {dist_val:.2f} <span style="font-size: 1rem; font-weight: 600;">km</span>
 </div>
@@ -3069,17 +2672,17 @@ def page_police_stations(df_police: pd.DataFrame | None):
 <div style="margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center;">
 <a href="tel:{phone_clean}" style="text-decoration: none;">
 <div style="background: #2563eb; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-📞 Call Station ({st_row['phone']})
+{t("btn_call_station", lang)} ({st_row['phone']})
 </div>
 </a>
 <a href="tel:112" style="text-decoration: none;">
 <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-🚨 Call Emergency 112
+{t("btn_call_112", lang)}
 </div>
 </a>
 <a href="{map_url}" target="_blank" style="text-decoration: none;">
 <div style="background: rgba(255,255,255,0.14); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-🗺️ Open Directions on Google Maps
+{t("btn_get_directions", lang)}
 </div>
 </a>
 </div>
@@ -3088,7 +2691,7 @@ def page_police_stations(df_police: pd.DataFrame | None):
     st.markdown(card_html, unsafe_allow_html=True)
 
     # Optional Expander if user ever wants to view full table
-    with st.expander("📋 View Full Police Station Directory & Distance Table"):
+    with st.expander(t("police_dir_expander", lang)):
         display_df = filtered_df[["station_name", "distance_km", "station_type", "city", "phone", "address"]].copy()
         st.table(display_df)
 
@@ -3394,16 +2997,16 @@ def render_folium_safe_routes_map(origin_lat, origin_lon, dest_lat, dest_lon, or
         st.warning("Folium rendering error: " + str(e))
 
 
-def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
+def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None, lang: str = "English"):
     """Safe Route Navigation Page supporting India-wide origin/destination, distance, & safety scoring."""
     st.markdown(
-        """
+        f"""
         <div class="hero-header" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(30, 27, 75, 0.85) 100%); border: 1px solid rgba(16, 185, 129, 0.35);">
             <div style="display: inline-block; padding: 0.25rem 0.75rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem;">
-                🛣️ INTELLIGENT SAFETY ROUTING ENGINE — INDIA WIDE
+                {t("route_hero_tag", lang)}
             </div>
-            <div class="hero-title" style="color: #ffffff;">🛣️ Safe Route Navigator</div>
-            <div class="hero-subtitle">Enter origin and destination to calculate driving distance and compare <b>Safe Routes (🟢 High Police Coverage)</b> vs <b>Unsafe Bypass Routes (🔴 High Risk Corridor)</b>.</div>
+            <div class="hero-title" style="color: #ffffff;">{t("route_hero_title", lang)}</div>
+            <div class="hero-subtitle">{t("route_hero_desc", lang)}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -3415,18 +3018,23 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("<h4 style='color: #10b981; margin-bottom: 0.3rem;'>🟢 1. Origin Location</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color: #10b981; margin-bottom: 0.3rem;'>{t('origin_header', lang)}</h4>", unsafe_allow_html=True)
+
+        type_label = t("origin_type_type", lang)
+        live_label = t("origin_type_current", lang)
 
         origin_mode = st.radio(
-            "Select Origin Input Type:",
-            ["📍 Type Place / Village / PIN Code", "📡 Use Current / Live Location"],
+            t("origin_type_label", lang),
+            [type_label, live_label],
             horizontal=True,
             key="origin_mode_choice_radio"
         )
 
-        if origin_mode == "📍 Type Place / Village / PIN Code":
+        is_live_origin = (origin_mode == live_label) or "Current" in origin_mode or "Live" in origin_mode or "ಲೈವ್" in origin_mode or "लाइव" in origin_mode
+
+        if not is_live_origin:
             origin_query = st.text_input(
-                "Origin Location (Type Village, Town, or 6-Digit PIN Code):",
+                t("origin_placeholder", lang),
                 value=st.session_state.get("safe_route_origin", "Hassan"),
                 placeholder="e.g. Hassan, Hirisave, Sosale, 573201...",
                 key="origin_search_input_single"
@@ -3474,11 +3082,11 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                 f"""
                 <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 14px; padding: 1rem 1.25rem; margin-top: 0.3rem; margin-bottom: 0.6rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">🟢 CURRENT LOCATION ACTIVE</span>
-                        <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m Accuracy</span>
+                        <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">{t("current_loc_active", lang)}</span>
+                        <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m {t("accuracy_label", lang)}</span>
                     </div>
                     <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 5px 0; font-family: 'Outfit', sans-serif;">📍 {c_addr}</div>
-                    <div style="font-size: 0.85rem; color: #cbd5e1;">Coordinates: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
+                    <div style="font-size: 0.85rem; color: #cbd5e1;">{t("coordinates_label", lang)} <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -3490,15 +3098,15 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                 st.markdown(
                     f"""
                     <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem;">
-                        <div style="font-size: 0.85rem; font-weight: 800; color: #fbbf24;">⚠️ Wi-Fi / ISP Network Gateway Detected ({isp_lat:.4f}° N, {isp_lon:.4f}° E)</div>
+                        <div style="font-size: 0.85rem; font-weight: 800; color: #fbbf24;">{t("isp_warning_title", lang)} ({isp_lat:.4f}° N, {isp_lon:.4f}° E)</div>
                         <div style="font-size: 0.78rem; color: #e2e8f0; margin-top: 2px; line-height: 1.4;">
-                            Your laptop Wi-Fi reports an ISP gateway in Bengaluru (±{isp_acc:.0f}m). PC laptops lack GPS satellite chips. Suraksha AI has preserved your accurate physical location in <b>Hassan, Karnataka</b>.
+                            {t("isp_warning_desc", lang)}
                         </div>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
-                if st.button(f"👉 Force Switch to ISP Detected Location ({isp_lat:.4f}, {isp_lon:.4f})", key="force_isp_loc_btn"):
+                if st.button(f"{t('force_isp_btn', lang)} ({isp_lat:.4f}, {isp_lon:.4f})", key="force_isp_loc_btn"):
                     st.session_state["exact_gps_lat"] = isp_lat
                     st.session_state["exact_gps_lon"] = isp_lon
                     st.session_state["exact_gps_acc"] = isp_acc
@@ -3507,12 +3115,12 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
                     st.rerun()
 
             # Search bar for any custom area, village, or PIN code
-            st.markdown("<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>🔍 Or type your exact locality, village, or PIN code:</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>{t('search_area_label', lang)}</div>", unsafe_allow_html=True)
             search_col1, search_col2 = st.columns([3, 1])
             with search_col1:
                 cur_area_search = st.text_input("Enter your current locality / village:", placeholder="e.g. Kuvempu Nagar, Dudda, Shantigrama, 573201...", key="search_curr_area_pin", label_visibility="collapsed")
             with search_col2:
-                if st.button("📍 Set Pin", key="set_typed_pin_btn", use_container_width=True):
+                if st.button(t("set_pin_btn", lang), key="set_typed_pin_btn", use_container_width=True):
                     if cur_area_search.strip():
                         q_str = cur_area_search.strip().lower()
                         if q_str in KARNATAKA_LOCATIONS:
@@ -3538,14 +3146,14 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             # Optional controls: Browser GPS & Interactive Map Picker
             loc_action1, loc_action2 = st.columns([1, 1])
             with loc_action1:
-                if st.button("🛰️ Detect Device GPS", key="trigger_browser_gps_btn", use_container_width=True):
+                if st.button(t("detect_gps_btn", lang), key="trigger_browser_gps_btn", use_container_width=True):
                     st.session_state["trigger_browser_gps"] = True
                     st.rerun()
             with loc_action2:
-                show_picker = st.checkbox("🗺️ Click on Map to Pin Exact Spot", value=False, key="show_map_pin_picker")
+                show_picker = st.checkbox(t("map_picker_label", lang), value=False, key="show_map_pin_picker")
 
             if show_picker and folium is not None and st_folium is not None:
-                st.caption("👇 **Click anywhere on the map** to adjust your location pin:")
+                st.caption(t("map_picker_caption", lang))
                 try:
                     m_pick = folium.Map(location=[c_lat, c_lon], zoom_start=13, tiles="OpenStreetMap")
                     folium.Marker([c_lat, c_lon], tooltip=f"Current Pin: {c_addr}", icon=folium.Icon(color="green", icon="user", prefix="fa")).add_to(m_pick)
@@ -3567,44 +3175,57 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             origin_query = f"Current Location ({c_addr})"
 
     with col2:
-        st.markdown("<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>🔴 2. Destination Location</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color: #ef4444; margin-bottom: 0.3rem;'>{t('dest_header', lang)}</h4>", unsafe_allow_html=True)
         dest_query = st.text_input(
-            "Destination Location (Type Village, Town, or 6-Digit PIN Code):",
+            t("dest_placeholder", lang),
             value=st.session_state.get("safe_route_dest", "Shravanabelagola"),
             placeholder="e.g. Shravanabelagola, Mysuru, Udupi, 573135...",
         )
 
     # Women's Safety Environmental Filters
     st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("🛡️ WOMEN'S SAFETY ENVIRONMENTAL FILTERS (Street Lighting, Bystander Density & Night Mode)", expanded=True):
+    with st.expander(t("filters_header", lang), expanded=True):
         e_col1, e_col2, e_col3 = st.columns(3)
         with e_col1:
-            lighting_pref = st.selectbox(
-                "💡 Street Lighting Quality:",
-                ["High Illumination Lit Corridors Only", "Moderate Street Lighting", "Any Road Lighting"],
+            lit_high = t("filter_lighting_high", lang)
+            lit_mod = t("filter_lighting_mod", lang)
+            lit_any = t("filter_lighting_any", lang)
+            lighting_pref_disp = st.selectbox(
+                t("filter_lighting", lang),
+                [lit_high, lit_mod, lit_any],
                 index=0,
                 key="lighting_pref_choice"
             )
+            lighting_pref = "High Illumination Lit Corridors Only" if lighting_pref_disp == lit_high else ("Moderate Street Lighting" if lighting_pref_disp == lit_mod else "Any Road Lighting")
+
         with e_col2:
-            crowd_pref = st.selectbox(
-                "👥 Bystander & Commercial Density:",
-                ["Active Commercial & High-Crowd Zones", "Residential / Moderate Density", "Any Bystander Density"],
+            crowd_high = t("filter_crowd_high", lang)
+            crowd_mod = t("filter_crowd_mod", lang)
+            crowd_any = t("filter_crowd_any", lang)
+            crowd_pref_disp = st.selectbox(
+                t("filter_crowd", lang),
+                [crowd_high, crowd_mod, crowd_any],
                 index=0,
                 key="crowd_pref_choice"
             )
+            crowd_pref = "Active Commercial & High-Crowd Zones" if crowd_pref_disp == crowd_high else ("Residential / Moderate Density" if crowd_pref_disp == crowd_mod else "Any Bystander Density")
+
         with e_col3:
-            time_mode = st.radio(
-                "⏱️ Time of Travel Mode:",
-                ["☀️ Daytime Travel", "🌙 Late Night Travel (10 PM - 5 AM)"],
+            time_day = t("filter_time_day", lang)
+            time_night = t("filter_time_night", lang)
+            time_mode_disp = st.radio(
+                t("filter_time", lang),
+                [time_day, time_night],
                 index=0,
                 key="time_mode_choice"
             )
+            time_mode = "☀️ Daytime Travel" if time_mode_disp == time_day else "🌙 Late Night Travel (10 PM - 5 AM)"
 
     st.markdown("<br>", unsafe_allow_html=True)
-    calc_btn = st.button("🚀 COMPUTE ACCURATE DISTANCE & SAFE VS UNSAFE ROUTES", use_container_width=True)
+    calc_btn = st.button(t("calc_route_btn", lang), use_container_width=True)
 
     if not calc_btn and "route_calculated" not in st.session_state:
-        st.info("💡 **Click the button above** to calculate driving distance, duration, street lighting index, crowd density, and safety analysis between origin and destination.")
+        st.info(t("calc_route_info", lang))
         return
 
     st.session_state["route_calculated"] = True
@@ -3683,23 +3304,23 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             f"""
             <div class="glass-card" style="background: linear-gradient(135deg, rgba(6, 78, 59, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%); border: 2.5px solid #10b981; padding: 1.25rem; box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #10b981; color: #042f2e; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">🟢 RECOMMENDED SAFE ROUTE</span>
+                    <span style="background: #10b981; color: #042f2e; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">{t("hud_safe_badge", lang)}</span>
                     <span style="font-size: 1.5rem; font-weight: 900; color: #34d399;">{safe_score}/100</span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
                     <div>
-                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">ACCURATE ROAD DISTANCE</div>
+                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">{t("hud_distance", lang).upper()}</div>
                         <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{s_dist_km:.2f} <span style="font-size: 0.9rem;">km</span></div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">ESTIMATED TRAVEL TIME</div>
+                        <div style="font-size: 0.75rem; color: #a7f3d0; text-transform: uppercase;">{t("hud_duration", lang).upper()}</div>
                         <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{s_dur_min:.0f} <span style="font-size: 0.9rem;">mins</span></div>
                     </div>
                 </div>
                 <div style="margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #d1d5db;">
-                    🛡️ <b>Police Protection:</b> {safe_st_cnt} Stations along primary corridor<br>
-                    💡 <b>Street Lighting Rating:</b> <span style="color: #34d399; font-weight: 800;">{safe_light}% Well-Lit Highway</span><br>
-                    👥 <b>Bystander & Crowd Density:</b> <span style="color: #34d399; font-weight: 800;">{safe_crowd}% Active Commercial Zone</span>
+                    🛡️ <b>{t("hud_police_count", lang)}:</b> {safe_st_cnt}<br>
+                    💡 <b>{t("hud_lighting", lang)}:</b> <span style="color: #34d399; font-weight: 800;">{safe_light}%</span><br>
+                    👥 <b>{t("hud_crowd", lang)}:</b> <span style="color: #34d399; font-weight: 800;">{safe_crowd}%</span>
                 </div>
             </div>
             """,
@@ -3711,23 +3332,23 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             f"""
             <div class="glass-card" style="background: linear-gradient(135deg, rgba(127, 29, 29, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%); border: 2.5px solid #ef4444; padding: 1.25rem; box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                    <span style="background: #ef4444; color: #450a0a; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">🔴 ALTERNATE / UNSAFE BYPASS</span>
+                    <span style="background: #ef4444; color: #450a0a; padding: 0.25rem 0.8rem; border-radius: 9999px; font-weight: 900; font-size: 0.85rem; letter-spacing: 0.05em;">{t("hud_unsafe_badge", lang)}</span>
                     <span style="font-size: 1.5rem; font-weight: 900; color: #fca5a5;">{unsafe_score}/100</span>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
                     <div>
-                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">ACCURATE ROAD DISTANCE</div>
+                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">{t("hud_distance", lang).upper()}</div>
                         <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{u_dist_km:.2f} <span style="font-size: 0.9rem;">km</span></div>
                     </div>
                     <div>
-                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">ESTIMATED TRAVEL TIME</div>
+                        <div style="font-size: 0.75rem; color: #fecdd3; text-transform: uppercase;">{t("hud_duration", lang).upper()}</div>
                         <div style="font-size: 1.8rem; font-weight: 800; color: #ffffff;">{u_dur_min:.0f} <span style="font-size: 0.9rem;">mins</span></div>
                     </div>
                 </div>
                 <div style="margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #d1d5db;">
-                    ⚠️ <b>Police Protection:</b> {unsafe_st_cnt} Stations along remote bypass route<br>
-                    💡 <b>Street Lighting Rating:</b> <span style="color: #fca5a5; font-weight: 800;">{unsafe_light}% Dimly Lit Bypass</span><br>
-                    👥 <b>Bystander & Crowd Density:</b> <span style="color: #fca5a5; font-weight: 800;">{unsafe_crowd}% Deserted Stretch</span>
+                    ⚠️ <b>{t("hud_police_count", lang)}:</b> {unsafe_st_cnt}<br>
+                    💡 <b>{t("hud_lighting", lang)}:</b> <span style="color: #fca5a5; font-weight: 800;">{unsafe_light}%</span><br>
+                    👥 <b>{t("hud_crowd", lang)}:</b> <span style="color: #fca5a5; font-weight: 800;">{unsafe_crowd}%</span>
                 </div>
             </div>
             """,
@@ -3753,7 +3374,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             f"""
             <a href="https://api.whatsapp.com/send?text={encoded_sos}" target="_blank" style="text-decoration: none;">
                 <div style="background: #25d366; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 800; text-align: center; display: inline-block;">
-                    📲 Share Live SOS Location Broadcast via WhatsApp
+                    📲 {t("sos_broadcast_btn", lang)}
                 </div>
             </a>
             """,
@@ -3762,15 +3383,16 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
 
     # In-App Interactive Turn-by-Turn Navigation Center
     st.markdown("---")
-    st.markdown("<h3 style='color: #10b981; font-family: Outfit, sans-serif;'>🗺️ IN-APP NATIVE TURN-BY-TURN NAVIGATION CENTER</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='color: #10b981; font-family: Outfit, sans-serif;'>{t('hud_guidance_header', lang)}</h3>", unsafe_allow_html=True)
+
+    opt_safe_nav = f"🟢 {t('hud_safe_badge', lang)} ({safe_score}/100)"
+    opt_unsafe_nav = f"🔴 {t('hud_unsafe_badge', lang)} ({unsafe_score}/100)"
 
     nav_route_choice = st.radio(
-        "🗺️ Select Active Route to Navigate In-App:",
-        [
-            f"🟢 Navigate Safe Route (Recommended — Safety Score: {safe_score}/100)",
-            f"🔴 Navigate Unsafe / Alternate Bypass Route (Safety Score: {unsafe_score}/100)"
-        ],
-        key="nav_route_choice_radio"
+        "Navigation Route Selector:",
+        [opt_safe_nav, opt_unsafe_nav],
+        key="nav_route_choice_radio",
+        label_visibility="collapsed"
     )
 
     is_unsafe_active = "🔴" in nav_route_choice
@@ -3786,7 +3408,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
     if steps:
         step_labels = [f"Step {s['step_num']}: {s['icon']} {s['action']} ({s['distance_str']})" for s in steps]
         selected_step_idx = st.selectbox(
-            "🧭 Step Through Turn Maneuvers (In-App Navigation Guidance):",
+            t("hud_guidance_desc", lang),
             range(len(step_labels)),
             format_func=lambda i: step_labels[i],
             key="in_app_step_selector"
@@ -3801,14 +3423,14 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             hud_bg = "linear-gradient(135deg, rgba(239, 68, 68, 0.35) 0%, rgba(15, 23, 42, 0.95) 100%)"
             hud_title_color = "#fca5a5"
             hud_shadow = "rgba(239, 68, 68, 0.3)"
-            hud_badge = "⚠️ WARNING: NAVIGATING UNSAFE / HIGH-RISK BYPASS ROUTE"
+            hud_badge = t("hud_unsafe_badge", lang)
             safety_status_note = "⚠️ Remote Interior Road Segment — Sparse Patrol Coverage & Unlit Sector"
         else:
             hud_border = "#10b981"
             hud_bg = "linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%)"
             hud_title_color = "#34d399"
             hud_shadow = "rgba(16, 185, 129, 0.25)"
-            hud_badge = "🟢 NAVIGATING RECOMMENDED SAFE ROUTE"
+            hud_badge = t("hud_safe_badge", lang)
             safety_status_note = cur_step['safety_note']
 
         hud_html = f"""
@@ -3836,7 +3458,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
 
     # Complete Step-by-Step Directions Table
     if steps:
-        table_title = "📋 View Complete Turn-by-Turn Guide (🔴 Unsafe Route)" if is_unsafe_active else "📋 View Complete Turn-by-Turn Guide (🟢 Safe Route)"
+        table_title = f"📋 {t('hud_guidance_header', lang)}"
         with st.expander(table_title):
             df_steps = pd.DataFrame(steps)[["step_num", "icon", "action", "name", "distance_str", "safety_note"]]
             df_steps.columns = ["Step #", "Turn Icon", "Maneuver / Action", "Road Name", "Distance", "Corridor Safety Status"]
@@ -3855,12 +3477,12 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
                 <a href="tel:112" style="text-decoration: none;">
                     <div style="background: #dc2626; color: #ffffff; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 700; font-size: 0.92rem;">
-                        🚨 Emergency SOS (Call 112)
+                        {t("btn_call_112", lang)}
                     </div>
                 </a>
                 <a href="{gmaps_safe_url}" target="_blank" style="text-decoration: none;">
                     <div style="background: #10b981; color: #042f2e; padding: 0.65rem 1.3rem; border-radius: 8px; font-weight: 800; font-size: 0.92rem;">
-                        🗺️ Start Navigation on Google Maps
+                        {t("btn_get_directions", lang)}
                     </div>
                 </a>
             </div>
@@ -3875,21 +3497,24 @@ def main():
     artifacts = load_model_artifacts()
     df_police = load_police_stations_dataset()
     page = sidebar_nav()
+    lang = st.session_state.get("app_language", "English")
 
-    if "Home" in page:
-        page_home(df)
-    elif "Safe Route" in page:
-        page_safe_routes(df, df_police)
-    elif "Police" in page:
-        page_police_stations(df_police)
-    elif "City & District Explorer" in page:
-        page_city_analysis(df)
-    elif "AI Risk Simulator" in page:
-        page_risk_prediction(df, artifacts)
-    elif "GIS" in page:
-        page_india_map(df)
-    elif "Leaderboard" in page:
-        page_district_matrix(df)
+    if page in ("home", "Home") or "home" in page.lower() or "ಮುಖಪುಟ" in page or "मुख्य" in page:
+        page_home(df, lang)
+    elif page in ("safe_routes", "Safe Route") or "safe" in page.lower() or "route" in page.lower() or "ಸುರಕ್ಷಿತ" in page or "मार्ग" in page:
+        page_safe_routes(df, df_police, lang)
+    elif page in ("police", "Police") or "police" in page.lower() or "ಪೊಲೀಸ್" in page or "पुलिस" in page:
+        page_police_stations(df_police, lang)
+    elif page in ("city_explorer", "City & District Explorer") or "city" in page.lower() or "ನಗರ" in page or "शहर" in page:
+        page_city_analysis(df, lang)
+    elif page in ("ai_simulator", "AI Risk Simulator") or "ai" in page.lower() or "sim" in page.lower() or "ಅಪಾಯ" in page or "जोखिम" in page:
+        page_risk_prediction(df, artifacts, lang)
+    elif page in ("gis_map", "GIS") or "gis" in page.lower() or "map" in page.lower() or "ನಕ್ಷೆ" in page or "मानचित्र" in page:
+        page_india_map(df, lang)
+    elif page in ("leaderboard", "Leaderboard") or "leader" in page.lower() or "rank" in page.lower() or "ಶ್ರೇಯಾಂಕ" in page or "रैंकिंग" in page:
+        page_district_matrix(df, lang)
+    else:
+        page_home(df, lang)
 
 
 
