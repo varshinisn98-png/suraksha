@@ -3413,88 +3413,80 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             )
             live_origin_coords = None
         else:
-            # Check if query params has live GPS from phone/browser
-            qp = st.query_params
-            if "live_lat" in qp and "live_lon" in qp:
-                try:
-                    st.session_state["curr_live_lat"] = float(qp["live_lat"])
-                    st.session_state["curr_live_lon"] = float(qp["live_lon"])
-                    st.session_state["curr_live_addr"] = reverse_geocode_osm(st.session_state["curr_live_lat"], st.session_state["curr_live_lon"])
-                except Exception:
-                    pass
+            # 1. Hardware Device GPS via browser geolocation component
+            try:
+                from streamlit_js_eval import get_geolocation
+                geo_loc = get_geolocation(component_key="device_gps_live")
+            except Exception:
+                geo_loc = None
 
-            if "curr_live_lat" not in st.session_state:
-                with st.spinner("🛰️ Detecting current GPS / network location..."):
-                    d_lat, d_lon, d_addr = get_device_current_location()
-                    st.session_state["curr_live_lat"] = d_lat
-                    st.session_state["curr_live_lon"] = d_lon
-                    st.session_state["curr_live_addr"] = d_addr
+            # If browser hardware sensor returns live coordinates
+            if geo_loc and isinstance(geo_loc, dict) and "coords" in geo_loc and geo_loc["coords"]:
+                hardware_lat = float(geo_loc["coords"]["latitude"])
+                hardware_lon = float(geo_loc["coords"]["longitude"])
+                hardware_acc = float(geo_loc["coords"].get("accuracy", 10.0))
+                st.session_state["exact_gps_lat"] = hardware_lat
+                st.session_state["exact_gps_lon"] = hardware_lon
+                st.session_state["exact_gps_acc"] = hardware_acc
+                if st.session_state.get("last_resolved_gps") != (hardware_lat, hardware_lon):
+                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(hardware_lat, hardware_lon)
+                    st.session_state["last_resolved_gps"] = (hardware_lat, hardware_lon)
 
-            c_lat = float(st.session_state["curr_live_lat"])
-            c_lon = float(st.session_state["curr_live_lon"])
-            c_addr = st.session_state.get("curr_live_addr", f"Live Location ({c_lat:.4f}, {c_lon:.4f})")
+            # Display active device location if GPS is locked
+            if "exact_gps_lat" in st.session_state and "exact_gps_lon" in st.session_state:
+                c_lat = float(st.session_state["exact_gps_lat"])
+                c_lon = float(st.session_state["exact_gps_lon"])
+                c_acc = float(st.session_state.get("exact_gps_acc", 10.0))
+                c_addr = st.session_state.get("exact_gps_addr", f"Device GPS Position ({c_lat:.5f}, {c_lon:.5f})")
 
-            st.markdown(
-                f"""
-                <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10b981; border-radius: 12px; padding: 0.85rem 1rem; margin-top: 0.3rem; margin-bottom: 0.6rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.74rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">🟢 CURRENT LOCATION LOCKED</span>
-                        <span style="font-size: 0.72rem; color: #a7f3d0; background: rgba(16, 185, 129, 0.25); padding: 2px 7px; border-radius: 4px; font-weight: 700;">ACCURATE GPS</span>
+                st.markdown(
+                    f"""
+                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 14px; padding: 1rem 1.25rem; margin-top: 0.3rem; margin-bottom: 0.6rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">🎯 EXACT DEVICE GPS LOCKED</span>
+                            <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m Accuracy</span>
+                        </div>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 5px 0; font-family: 'Outfit', sans-serif;">📍 {c_addr}</div>
+                        <div style="font-size: 0.85rem; color: #cbd5e1;">Real-Time GPS: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
                     </div>
-                    <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin: 4px 0;">📍 {c_addr}</div>
-                    <div style="font-size: 0.8rem; color: #9ca3af;">Coordinates: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            btn_c1, btn_c2 = st.columns([1, 1])
-            with btn_c1:
-                if st.button("🔄 Auto-Detect / Refresh", key="refresh_current_loc_btn", use_container_width=True):
-                    d_lat, d_lon, d_addr = get_device_current_location()
-                    st.session_state["curr_live_lat"] = d_lat
-                    st.session_state["curr_live_lon"] = d_lon
-                    st.session_state["curr_live_addr"] = reverse_geocode_osm(d_lat, d_lon)
-                    st.rerun()
-            with btn_c2:
-                components.html(
-                    """
-                    <button onclick="requestGPS()" style="width:100%; height:38px; background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:13px;">
-                        🛰️ Use Device Sensor GPS
-                    </button>
-                    <script>
-                    function requestGPS() {
-                        if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(function(pos) {
-                                const lat = pos.coords.latitude.toFixed(5);
-                                const lon = pos.coords.longitude.toFixed(5);
-                                const u = new URL(window.parent.location.href);
-                                u.searchParams.set('live_lat', lat);
-                                u.searchParams.set('live_lon', lon);
-                                window.parent.location.href = u.href;
-                            }, function(err) {
-                                alert('Could not access device GPS (' + err.message + '). Using network location.');
-                            }, { enableHighAccuracy: true, timeout: 8000 });
-                        } else {
-                            alert('Geolocation not supported in this browser.');
-                        }
-                    }
-                    </script>
                     """,
-                    height=42
+                    unsafe_allow_html=True
                 )
+            else:
+                st.info("🛰️ **Requesting your device GPS location...** Click **'Allow'** when your browser prompts for location permission.")
+                # Default baseline until user allows browser GPS
+                c_lat, c_lon, c_addr = 13.0068, 76.1038, "Hassan, Karnataka"
 
-            with st.expander("🛠️ Manual Coordinate Override (Optional)", expanded=False):
-                adj_col1, adj_col2 = st.columns(2)
-                with adj_col1:
-                    manual_lat = st.number_input("Latitude (° N):", value=c_lat, format="%.5f", key="man_lat_in")
-                with adj_col2:
-                    manual_lon = st.number_input("Longitude (° E):", value=c_lon, format="%.5f", key="man_lon_in")
-                if manual_lat != c_lat or manual_lon != c_lon:
-                    st.session_state["curr_live_lat"] = manual_lat
-                    st.session_state["curr_live_lon"] = manual_lon
-                    c_lat = manual_lat
-                    c_lon = manual_lon
+            # Quick search / Locality selector if user wants to pinpoint exact village/neighborhood
+            with st.expander("🔍 Don't have GPS enabled or want to pinpoint exact area/village?", expanded=("exact_gps_lat" not in st.session_state)):
+                st.markdown("<div style='font-size:0.85rem; color:#cbd5e1; margin-bottom:0.4rem;'>Enter your exact neighborhood, village, or town to pin your current location accurately:</div>", unsafe_allow_html=True)
+                loc_col1, loc_col2 = st.columns([3, 1])
+                with loc_col1:
+                    typed_cur_loc = st.text_input("Current Area / Village Name:", placeholder="e.g. Hassan, Pension Mohalla, Kuvempu Nagar, Sakleshpur...", key="pinpoint_loc_in")
+                with loc_col2:
+                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                    if st.button("📍 Pin Area", key="pin_exact_area_btn", use_container_width=True):
+                        if typed_cur_loc.strip():
+                            p_res = geocode_osm_india(typed_cur_loc.strip())
+                            if p_res:
+                                st.session_state["exact_gps_lat"] = p_res[0]
+                                st.session_state["exact_gps_lon"] = p_res[1]
+                                st.session_state["exact_gps_addr"] = p_res[2]
+                                st.session_state["exact_gps_acc"] = 5.0
+                                st.rerun()
+
+                st.markdown("---")
+                c_adj1, c_adj2 = st.columns(2)
+                with c_adj1:
+                    adj_lat = st.number_input("Latitude (° N):", value=float(c_lat), format="%.5f", key="adj_lat_input_field")
+                with c_adj2:
+                    adj_lon = st.number_input("Longitude (° E):", value=float(c_lon), format="%.5f", key="adj_lon_input_field")
+                if adj_lat != c_lat or adj_lon != c_lon:
+                    st.session_state["exact_gps_lat"] = adj_lat
+                    st.session_state["exact_gps_lon"] = adj_lon
+                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(adj_lat, adj_lon)
+                    c_lat, c_lon = adj_lat, adj_lon
+                    c_addr = st.session_state["exact_gps_addr"]
 
             live_origin_coords = (c_lat, c_lon)
             origin_query = f"Current Location ({c_addr})"
