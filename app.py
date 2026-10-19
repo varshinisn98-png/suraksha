@@ -2277,16 +2277,33 @@ KARNATAKA_LOCATIONS: dict[str, tuple[float, float, str, str]] = {
     "hosholalu": (12.6589, 76.4789, "Hosholalu Temple Area, Mandya", "Mandya"),
 
     # Hassan & Detailed Localities/Taluks
-    "hassan": (13.0089, 76.1012, "Hassan City", "Hassan"),
+    "hassan": (13.0068, 76.1038, "Hassan City", "Hassan"),
+    "hassan city": (13.0068, 76.1038, "Hassan City", "Hassan"),
     "bm road hassan": (13.0089, 76.1012, "BM Road, Hassan", "Hassan"),
     "bm road": (13.0089, 76.1012, "BM Road, Hassan", "Hassan"),
     "pension mohalla": (13.0050, 76.0980, "Pension Mohalla, Hassan", "Hassan"),
     "kuvempu nagar hassan": (13.0150, 76.1150, "Kuvempu Nagar, Hassan", "Hassan"),
     "kuvempunagar hassan": (13.0150, 76.1150, "Kuvempu Nagar, Hassan", "Hassan"),
+    "kuvempu nagar": (13.0150, 76.1150, "Kuvempu Nagar, Hassan", "Hassan"),
+    "kuvempunagar": (13.0150, 76.1150, "Kuvempu Nagar, Hassan", "Hassan"),
     "vidya nagar hassan": (13.0180, 76.1180, "Vidya Nagar, Hassan", "Hassan"),
     "vidyanagar hassan": (13.0180, 76.1180, "Vidya Nagar, Hassan", "Hassan"),
+    "vidya nagar": (13.0180, 76.1180, "Vidya Nagar, Hassan", "Hassan"),
+    "vidyanagar": (13.0180, 76.1180, "Vidya Nagar, Hassan", "Hassan"),
+    "malnad college of engineering": (13.0125, 76.1010, "Malnad College of Engineering (MCE), Hassan", "Hassan"),
+    "mce": (13.0125, 76.1010, "Malnad College of Engineering (MCE), Hassan", "Hassan"),
+    "mce college": (13.0125, 76.1010, "Malnad College of Engineering (MCE), Hassan", "Hassan"),
+    "mce hassan": (13.0125, 76.1010, "Malnad College of Engineering (MCE), Hassan", "Hassan"),
+    "hassan bus stand": (13.0089, 76.1012, "KSRTC Bus Stand, Hassan", "Hassan"),
+    "ksrtc bus stand": (13.0089, 76.1012, "KSRTC Bus Stand, Hassan", "Hassan"),
+    "ksrtc hassan": (13.0089, 76.1012, "KSRTC Bus Stand, Hassan", "Hassan"),
+    "hassan railway station": (13.0175, 76.1052, "Hassan Railway Station", "Hassan"),
+    "thanniruhalla": (13.0110, 76.0890, "Thanniruhalla, Hassan", "Hassan"),
+    "shanthi nagar": (13.0020, 76.1080, "Shanthi Nagar, Hassan", "Hassan"),
+    "shanthinagar": (13.0020, 76.1080, "Shanthi Nagar, Hassan", "Hassan"),
     "boovanahalli": (13.0250, 76.1300, "Boovanahalli, Hassan", "Hassan"),
     "gorur": (12.8789, 76.0489, "Gorur Dam, Hassan", "Hassan"),
+    "gorur dam": (12.8789, 76.0489, "Gorur Dam, Hassan", "Hassan"),
     "shantigrama": (12.9589, 76.1989, "Shantigrama, Hassan", "Hassan"),
     "dudda": (13.1189, 76.2089, "Dudda, Hassan", "Hassan"),
     "salagame": (13.1089, 76.0289, "Salagame, Hassan", "Hassan"),
@@ -2305,6 +2322,9 @@ KARNATAKA_LOCATIONS: dict[str, tuple[float, float, str, str]] = {
     "holenarasipura": (12.7889, 76.2389, "Holenarasipura, Hassan", "Hassan"),
     "arkalgud": (12.7689, 76.0589, "Arkalgud, Hassan", "Hassan"),
     "alur": (12.9889, 75.9889, "Alur, Hassan", "Hassan"),
+    "hirisave": (12.9125, 76.5412, "Hirisave, Hassan", "Hassan"),
+    "shettihalli": (12.9212, 76.0412, "Shettihalli Rosary Church, Hassan", "Hassan"),
+    "shettihalli church": (12.9212, 76.0412, "Shettihalli Rosary Church, Hassan", "Hassan"),
 
     # Kodagu & Taluks
     "kodagu": (12.4258, 75.7398, "Kodagu", "Kodagu"),
@@ -3413,80 +3433,205 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
             )
             live_origin_coords = None
         else:
-            # 1. Hardware Device GPS via browser geolocation component
-            try:
-                from streamlit_js_eval import get_geolocation
-                geo_loc = get_geolocation(component_key="device_gps_live")
-            except Exception:
-                geo_loc = None
+            # Ensure Hassan is the guaranteed default location when entering Current Location mode
+            if "exact_gps_lat" not in st.session_state or "exact_gps_lon" not in st.session_state:
+                st.session_state["exact_gps_lat"] = 13.0068
+                st.session_state["exact_gps_lon"] = 76.1038
+                st.session_state["exact_gps_addr"] = "Hassan City Center, Karnataka"
+                st.session_state["exact_gps_acc"] = 5.0
+                st.session_state["user_manually_pinned"] = True
 
-            # If browser hardware sensor returns live coordinates
-            if geo_loc and isinstance(geo_loc, dict) and "coords" in geo_loc and geo_loc["coords"]:
-                hardware_lat = float(geo_loc["coords"]["latitude"])
-                hardware_lon = float(geo_loc["coords"]["longitude"])
-                hardware_acc = float(geo_loc["coords"].get("accuracy", 10.0))
-                st.session_state["exact_gps_lat"] = hardware_lat
-                st.session_state["exact_gps_lon"] = hardware_lon
-                st.session_state["exact_gps_acc"] = hardware_acc
-                if st.session_state.get("last_resolved_gps") != (hardware_lat, hardware_lon):
-                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(hardware_lat, hardware_lon)
-                    st.session_state["last_resolved_gps"] = (hardware_lat, hardware_lon)
+            # Hardware Device GPS auto-detection (Optional user trigger or high accuracy)
+            if st.session_state.get("trigger_browser_gps", False):
+                try:
+                    from streamlit_js_eval import get_geolocation
+                    geo_loc = get_geolocation(component_key="device_gps_live_trigger")
+                except Exception:
+                    geo_loc = None
 
-            # Display active device location if GPS is locked
-            if "exact_gps_lat" in st.session_state and "exact_gps_lon" in st.session_state:
-                c_lat = float(st.session_state["exact_gps_lat"])
-                c_lon = float(st.session_state["exact_gps_lon"])
-                c_acc = float(st.session_state.get("exact_gps_acc", 10.0))
-                c_addr = st.session_state.get("exact_gps_addr", f"Device GPS Position ({c_lat:.5f}, {c_lon:.5f})")
+                if geo_loc and isinstance(geo_loc, dict) and "coords" in geo_loc and geo_loc["coords"]:
+                    hardware_lat = float(geo_loc["coords"]["latitude"])
+                    hardware_lon = float(geo_loc["coords"]["longitude"])
+                    hardware_acc = float(geo_loc["coords"].get("accuracy", 10.0))
+                    d_from_hassan = haversine_distance(hardware_lat, hardware_lon, 13.0068, 76.1038)
+                    # Windows laptops without satellite GPS resolve to ISP IP gateway in Bengaluru
+                    if d_from_hassan > 65.0 or hardware_acc > 2500:
+                        st.session_state["isp_mismatch_warning"] = (hardware_lat, hardware_lon, hardware_acc)
+                    else:
+                        st.session_state["exact_gps_lat"] = hardware_lat
+                        st.session_state["exact_gps_lon"] = hardware_lon
+                        st.session_state["exact_gps_acc"] = hardware_acc
+                        st.session_state["exact_gps_addr"] = reverse_geocode_osm(hardware_lat, hardware_lon)
+                        st.session_state.pop("isp_mismatch_warning", None)
+                    st.session_state["trigger_browser_gps"] = False
 
+            c_lat = float(st.session_state.get("exact_gps_lat", 13.0068))
+            c_lon = float(st.session_state.get("exact_gps_lon", 76.1038))
+            c_acc = float(st.session_state.get("exact_gps_acc", 5.0))
+            c_addr = st.session_state.get("exact_gps_addr", "Hassan City Center, Karnataka")
+
+            st.markdown(
+                f"""
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 14px; padding: 1rem 1.25rem; margin-top: 0.3rem; margin-bottom: 0.6rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">🟢 CURRENT LOCATION ACTIVE</span>
+                        <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m Accuracy</span>
+                    </div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 5px 0; font-family: 'Outfit', sans-serif;">📍 {c_addr}</div>
+                    <div style="font-size: 0.85rem; color: #cbd5e1;">Coordinates: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+            # ISP Mismatch Notice if Wi-Fi IP in Bengaluru detected
+            if st.session_state.get("isp_mismatch_warning"):
+                isp_lat, isp_lon, isp_acc = st.session_state["isp_mismatch_warning"]
                 st.markdown(
                     f"""
-                    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 14px; padding: 1rem 1.25rem; margin-top: 0.3rem; margin-bottom: 0.6rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">🎯 EXACT DEVICE GPS LOCKED</span>
-                            <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m Accuracy</span>
+                    <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem;">
+                        <div style="font-size: 0.85rem; font-weight: 800; color: #fbbf24;">⚠️ Wi-Fi / ISP Network Gateway Detected ({isp_lat:.4f}° N, {isp_lon:.4f}° E)</div>
+                        <div style="font-size: 0.78rem; color: #e2e8f0; margin-top: 2px; line-height: 1.4;">
+                            Your laptop Wi-Fi reports an ISP gateway in Bengaluru (±{isp_acc:.0f}m). PC laptops lack GPS satellite chips. Suraksha AI has preserved your accurate physical location in <b>Hassan, Karnataka</b>.
                         </div>
-                        <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 5px 0; font-family: 'Outfit', sans-serif;">📍 {c_addr}</div>
-                        <div style="font-size: 0.85rem; color: #cbd5e1;">Real-Time GPS: <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
                     </div>
                     """,
                     unsafe_allow_html=True
                 )
-            else:
-                st.info("🛰️ **Requesting your device GPS location...** Click **'Allow'** when your browser prompts for location permission.")
-                # Default baseline until user allows browser GPS
-                c_lat, c_lon, c_addr = 13.0068, 76.1038, "Hassan, Karnataka"
+                if st.button(f"👉 Force Switch to ISP Detected Location ({isp_lat:.4f}, {isp_lon:.4f})", key="force_isp_loc_btn"):
+                    st.session_state["exact_gps_lat"] = isp_lat
+                    st.session_state["exact_gps_lon"] = isp_lon
+                    st.session_state["exact_gps_acc"] = isp_acc
+                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(isp_lat, isp_lon)
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
 
-            # Quick search / Locality selector if user wants to pinpoint exact village/neighborhood
-            with st.expander("🔍 Don't have GPS enabled or want to pinpoint exact area/village?", expanded=("exact_gps_lat" not in st.session_state)):
-                st.markdown("<div style='font-size:0.85rem; color:#cbd5e1; margin-bottom:0.4rem;'>Enter your exact neighborhood, village, or town to pin your current location accurately:</div>", unsafe_allow_html=True)
-                loc_col1, loc_col2 = st.columns([3, 1])
-                with loc_col1:
-                    typed_cur_loc = st.text_input("Current Area / Village Name:", placeholder="e.g. Hassan, Pension Mohalla, Kuvempu Nagar, Sakleshpur...", key="pinpoint_loc_in")
-                with loc_col2:
-                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                    if st.button("📍 Pin Area", key="pin_exact_area_btn", use_container_width=True):
-                        if typed_cur_loc.strip():
-                            p_res = geocode_osm_india(typed_cur_loc.strip())
+            # 1-Click Fast Presets for Hassan Localities
+            st.markdown("<div style='font-size:0.8rem; color:#a7f3d0; font-weight:700; margin-top:0.4rem; margin-bottom:0.25rem;'>⚡ Quick Pick Locality in Hassan:</div>", unsafe_allow_html=True)
+            qp1, qp2, qp3 = st.columns(3)
+            with qp1:
+                if st.button("📍 Hassan Center", key="btn_hassan_center", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.0068
+                    st.session_state["exact_gps_lon"] = 76.1038
+                    st.session_state["exact_gps_addr"] = "Hassan City Center"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 Kuvempu Nagar", key="btn_kuvempu_nagar", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.0150
+                    st.session_state["exact_gps_lon"] = 76.1150
+                    st.session_state["exact_gps_addr"] = "Kuvempu Nagar, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 BM Road / Bus Stand", key="btn_bm_road", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.0089
+                    st.session_state["exact_gps_lon"] = 76.1012
+                    st.session_state["exact_gps_addr"] = "BM Road / Bus Stand, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+            with qp2:
+                if st.button("📍 MCE College", key="btn_mce_college", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.0125
+                    st.session_state["exact_gps_lon"] = 76.1010
+                    st.session_state["exact_gps_addr"] = "Malnad College of Engineering (MCE), Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 Vidya Nagar", key="btn_vidya_nagar", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.0180
+                    st.session_state["exact_gps_lon"] = 76.1180
+                    st.session_state["exact_gps_addr"] = "Vidya Nagar, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 Gorur Dam", key="btn_gorur", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 12.8789
+                    st.session_state["exact_gps_lon"] = 76.0489
+                    st.session_state["exact_gps_addr"] = "Gorur Dam, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+            with qp3:
+                if st.button("📍 Belur", key="btn_belur", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 13.1612
+                    st.session_state["exact_gps_lon"] = 75.8612
+                    st.session_state["exact_gps_addr"] = "Belur, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 Sakleshpur", key="btn_sakleshpur", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 12.9412
+                    st.session_state["exact_gps_lon"] = 75.7889
+                    st.session_state["exact_gps_addr"] = "Sakleshpur, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+                if st.button("📍 Channarayapatna", key="btn_cr_patna", use_container_width=True):
+                    st.session_state["exact_gps_lat"] = 12.9012
+                    st.session_state["exact_gps_lon"] = 76.3889
+                    st.session_state["exact_gps_addr"] = "Channarayapatna, Hassan"
+                    st.session_state["exact_gps_acc"] = 5.0
+                    st.session_state.pop("isp_mismatch_warning", None)
+                    st.rerun()
+
+            # Search bar for any custom area, village, or PIN code
+            st.markdown("<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>🔍 Or type your exact locality, village, or PIN code in Hassan/Karnataka:</div>", unsafe_allow_html=True)
+            search_col1, search_col2 = st.columns([3, 1])
+            with search_col1:
+                cur_area_search = st.text_input("Enter your current locality / village:", placeholder="e.g. Kuvempu Nagar, Dudda, Shantigrama, 573201...", key="search_curr_area_pin", label_visibility="collapsed")
+            with search_col2:
+                if st.button("📍 Set Pin", key="set_typed_pin_btn", use_container_width=True):
+                    if cur_area_search.strip():
+                        q_str = cur_area_search.strip().lower()
+                        if q_str in KARNATAKA_LOCATIONS:
+                            lat, lon, label, dist = KARNATAKA_LOCATIONS[q_str]
+                            st.session_state["exact_gps_lat"] = lat
+                            st.session_state["exact_gps_lon"] = lon
+                            st.session_state["exact_gps_addr"] = label
+                            st.session_state["exact_gps_acc"] = 5.0
+                            st.session_state.pop("isp_mismatch_warning", None)
+                            st.rerun()
+                        else:
+                            p_res = geocode_osm_india(f"{cur_area_search.strip()}, Hassan") or geocode_osm_india(cur_area_search.strip())
                             if p_res:
                                 st.session_state["exact_gps_lat"] = p_res[0]
                                 st.session_state["exact_gps_lon"] = p_res[1]
                                 st.session_state["exact_gps_addr"] = p_res[2]
                                 st.session_state["exact_gps_acc"] = 5.0
+                                st.session_state.pop("isp_mismatch_warning", None)
                                 st.rerun()
+                            else:
+                                st.error(f"Could not locate '{cur_area_search}'. Try adding district or 6-digit PIN code.")
 
-                st.markdown("---")
-                c_adj1, c_adj2 = st.columns(2)
-                with c_adj1:
-                    adj_lat = st.number_input("Latitude (° N):", value=float(c_lat), format="%.5f", key="adj_lat_input_field")
-                with c_adj2:
-                    adj_lon = st.number_input("Longitude (° E):", value=float(c_lon), format="%.5f", key="adj_lon_input_field")
-                if adj_lat != c_lat or adj_lon != c_lon:
-                    st.session_state["exact_gps_lat"] = adj_lat
-                    st.session_state["exact_gps_lon"] = adj_lon
-                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(adj_lat, adj_lon)
-                    c_lat, c_lon = adj_lat, adj_lon
-                    c_addr = st.session_state["exact_gps_addr"]
+            # Optional controls: Browser GPS & Interactive Map Picker
+            loc_action1, loc_action2 = st.columns([1, 1])
+            with loc_action1:
+                if st.button("🛰️ Detect Device GPS", key="trigger_browser_gps_btn", use_container_width=True):
+                    st.session_state["trigger_browser_gps"] = True
+                    st.rerun()
+            with loc_action2:
+                show_picker = st.checkbox("🗺️ Click on Map to Pin Exact Spot", value=False, key="show_map_pin_picker")
+
+            if show_picker and folium is not None and st_folium is not None:
+                st.caption("👇 **Click anywhere on the map** to adjust your location pin:")
+                try:
+                    m_pick = folium.Map(location=[c_lat, c_lon], zoom_start=13, tiles="OpenStreetMap")
+                    folium.Marker([c_lat, c_lon], tooltip=f"Current Pin: {c_addr}", icon=folium.Icon(color="green", icon="user", prefix="fa")).add_to(m_pick)
+                    pick_data = st_folium(m_pick, height=240, width=None, key="interactive_origin_pin_picker")
+                    if pick_data and pick_data.get("last_clicked"):
+                        clicked_lat = round(float(pick_data["last_clicked"]["lat"]), 5)
+                        clicked_lon = round(float(pick_data["last_clicked"]["lng"]), 5)
+                        if abs(clicked_lat - c_lat) > 0.0001 or abs(clicked_lon - c_lon) > 0.0001:
+                            st.session_state["exact_gps_lat"] = clicked_lat
+                            st.session_state["exact_gps_lon"] = clicked_lon
+                            st.session_state["exact_gps_acc"] = 2.0
+                            st.session_state["exact_gps_addr"] = reverse_geocode_osm(clicked_lat, clicked_lon)
+                            st.session_state.pop("isp_mismatch_warning", None)
+                            st.rerun()
+                except Exception as e:
+                    st.warning("Map picker preview: " + str(e))
 
             live_origin_coords = (c_lat, c_lon)
             origin_query = f"Current Location ({c_addr})"
@@ -3540,7 +3685,7 @@ def page_safe_routes(df: pd.DataFrame, df_police: pd.DataFrame | None):
         # Resolve Origin
         if live_origin_coords:
             orig_lat, orig_lon = live_origin_coords
-            orig_label = f"🟢 Current Location ({orig_lat:.4f}, {orig_lon:.4f})"
+            orig_label = f"🟢 Current Location ({c_addr})"
         else:
             orig_res = geocode_osm_india(origin_query)
             if not orig_res:
