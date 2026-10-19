@@ -28,6 +28,9 @@ except ImportError:
         st_folium = None
 
 from src import config, data_loader, predict, visualization, auth
+import importlib
+import src.translations as translations
+importlib.reload(translations)
 from src.translations import t, LANGUAGES
 
 st.set_page_config(
