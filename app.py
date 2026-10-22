@@ -2437,25 +2437,50 @@ def resolve_karnataka_location(query: str, df_police: pd.DataFrame) -> tuple[flo
     return 12.9716, 77.5946, f"{q_raw} (Karnataka)", detected_dist
 
 
-def render_folium_police_map(user_lat: float, user_lon: float, location_description: str, top_df: pd.DataFrame):
+def render_folium_police_map(user_lat: float, user_lon: float, location_description: str, top_df: pd.DataFrame, is_live: bool = False, acc_m: float = 5.0):
     """Render an interactive map showing searched location & exact #1 nearest police station."""
     try:
-        m = folium.Map(location=[user_lat, user_lon], zoom_start=12, tiles="OpenStreetMap")
+        m = folium.Map(location=[user_lat, user_lon], zoom_start=13, tiles="OpenStreetMap")
         
-        # User Location Red Pin
-        user_html = f"""
-        <div style="font-family: sans-serif; padding: 4px; min-width: 140px;">
-            <div style="font-weight: 800; font-size: 0.85rem; color: #dc2626;">📍 SEARCHED LOCATION</div>
-            <div style="font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: 2px;">{location_description}</div>
-            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">GPS: {user_lat:.4f}, {user_lon:.4f}</div>
-        </div>
-        """
-        folium.Marker(
-            [user_lat, user_lon],
-            popup=folium.Popup(user_html, max_width=250),
-            tooltip=f"📍 Searched Location: {location_description}",
-            icon=folium.Icon(color="red", icon="location-dot", prefix="fa")
-        ).add_to(m)
+        if is_live:
+            # Current Live Location Green User Pin
+            user_html = f"""
+            <div style="font-family: sans-serif; padding: 4px; min-width: 140px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: #059669;">📡 CURRENT LIVE LOCATION</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: 2px;">{location_description}</div>
+                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">GPS: {user_lat:.4f}, {user_lon:.4f} (±{acc_m:.0f}m)</div>
+            </div>
+            """
+            folium.Marker(
+                [user_lat, user_lon],
+                popup=folium.Popup(user_html, max_width=250),
+                tooltip=f"📡 Current Location: {location_description}",
+                icon=folium.Icon(color="green", icon="user", prefix="fa")
+            ).add_to(m)
+
+            folium.Circle(
+                radius=max(acc_m, 25.0),
+                location=[user_lat, user_lon],
+                color="#10b981",
+                fill=True,
+                fill_color="#10b981",
+                fill_opacity=0.18
+            ).add_to(m)
+        else:
+            # User Location Red Pin
+            user_html = f"""
+            <div style="font-family: sans-serif; padding: 4px; min-width: 140px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: #dc2626;">📍 SEARCHED LOCATION</div>
+                <div style="font-size: 0.95rem; font-weight: 700; color: #111827; margin-top: 2px;">{location_description}</div>
+                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">GPS: {user_lat:.4f}, {user_lon:.4f}</div>
+            </div>
+            """
+            folium.Marker(
+                [user_lat, user_lon],
+                popup=folium.Popup(user_html, max_width=250),
+                tooltip=f"📍 Searched Location: {location_description}",
+                icon=folium.Icon(color="red", icon="location-dot", prefix="fa")
+            ).add_to(m)
 
         rank_colors = ["green", "blue", "purple"]
 
@@ -2499,7 +2524,7 @@ def render_folium_police_map(user_lat: float, user_lon: float, location_descript
                 dash_array="6, 8"
             ).add_to(m)
 
-        st_folium(m, width=None, height=480, use_container_width=True)
+        st_folium(m, width=None, height=480, use_container_width=True, key="folium_police_overview_map")
     except Exception as e:
         map_df = top_df[["latitude", "longitude", "station_name"]].copy()
         map_df.columns = ["lat", "lon", "station_name"]
@@ -2561,17 +2586,20 @@ def page_police_stations(df_police: pd.DataFrame | None, lang: str = "English"):
         unsafe_allow_html=True,
     )
 
-    # 2. Location Input (Search Bar)
+    # 2. Location Input & Current Location Controls
     st.markdown(f"<h4 style='color: #f3f4f6; margin-bottom: 0.4rem;'>{t('search_police_header', lang)}</h4>", unsafe_allow_html=True)
-    
-    col_in1, col_in2 = st.columns([2.5, 1])
 
-    with col_in1:
-        query_input = st.text_input(
-            f"🔍 {t('search_police_header', lang)}:",
-            value=st.session_state.get("last_searched_place", ""),
-            placeholder=t("search_police_placeholder", lang),
-            key="police_search_input_single"
+    type_label = t("origin_type_type", lang)
+    live_label = t("origin_type_current", lang)
+
+    col_mode, col_cat = st.columns([2.2, 1.2])
+
+    with col_mode:
+        police_origin_mode = st.radio(
+            t("origin_type_label", lang),
+            [type_label, live_label],
+            horizontal=True,
+            key="police_origin_mode_choice_radio"
         )
 
     cat_all = t("cat_all", lang)
@@ -2579,21 +2607,167 @@ def page_police_stations(df_police: pd.DataFrame | None, lang: str = "English"):
     cat_cyber = t("cat_cyber", lang)
     cat_gen = t("cat_general", lang)
 
-    with col_in2:
+    with col_cat:
         station_type_filter = st.selectbox(
             t("police_category_label", lang),
-            [cat_all, cat_women, cat_cyber, cat_gen]
+            [cat_all, cat_women, cat_cyber, cat_gen],
+            key="police_station_category_filter"
         )
 
-    active_query = query_input.strip() or st.session_state.get("last_searched_place", "Hassan")
+    is_live_loc = (police_origin_mode == live_label) or "Current" in police_origin_mode or "Live" in police_origin_mode or "ಲೈವ್" in police_origin_mode or "लाइव" in police_origin_mode
 
-    if not active_query:
-        st.info("💡 **Type any location, village, town, or 6-digit PIN code in the search bar above** to locate the nearest police station.")
-        return
+    if not is_live_loc:
+        query_input = st.text_input(
+            f"🔍 {t('search_police_header', lang)}:",
+            value=st.session_state.get("last_searched_place", "Hassan"),
+            placeholder=t("search_police_placeholder", lang),
+            key="police_search_input_single"
+        )
 
-    st.session_state["last_searched_place"] = active_query
+        active_query = query_input.strip() or st.session_state.get("last_searched_place", "Hassan")
 
-    user_lat, user_lon, location_description, target_district = resolve_karnataka_location(active_query, df_police)
+        if not active_query:
+            st.info("💡 **Type any location, village, town, or 6-digit PIN code in the search bar above** to locate the nearest police station.")
+            return
+
+        st.session_state["last_searched_place"] = active_query
+        user_lat, user_lon, location_description, target_district = resolve_karnataka_location(active_query, df_police)
+        user_acc = 5.0
+    else:
+        # Guarantee Hassan as default location in session state
+        if "exact_gps_lat" not in st.session_state or "exact_gps_lon" not in st.session_state:
+            st.session_state["exact_gps_lat"] = 13.0068
+            st.session_state["exact_gps_lon"] = 76.1038
+            st.session_state["exact_gps_addr"] = "Hassan City Center, Karnataka"
+            st.session_state["exact_gps_acc"] = 5.0
+
+        # Hardware Device GPS auto-detection
+        if st.session_state.get("trigger_browser_gps_police", False):
+            try:
+                from streamlit_js_eval import get_geolocation
+                geo_loc = get_geolocation(component_key="police_device_gps_live_trigger")
+            except Exception:
+                geo_loc = None
+
+            if geo_loc and isinstance(geo_loc, dict) and "coords" in geo_loc and geo_loc["coords"]:
+                hardware_lat = float(geo_loc["coords"]["latitude"])
+                hardware_lon = float(geo_loc["coords"]["longitude"])
+                hardware_acc = float(geo_loc["coords"].get("accuracy", 10.0))
+                d_from_hassan = haversine_distance(hardware_lat, hardware_lon, 13.0068, 76.1038)
+                # Windows laptops without satellite GPS resolve to ISP IP gateway in Bengaluru
+                if d_from_hassan > 65.0 or hardware_acc > 2500:
+                    st.session_state["isp_mismatch_warning_police"] = (hardware_lat, hardware_lon, hardware_acc)
+                else:
+                    st.session_state["exact_gps_lat"] = hardware_lat
+                    st.session_state["exact_gps_lon"] = hardware_lon
+                    st.session_state["exact_gps_acc"] = hardware_acc
+                    st.session_state["exact_gps_addr"] = reverse_geocode_osm(hardware_lat, hardware_lon)
+                    st.session_state.pop("isp_mismatch_warning_police", None)
+                st.session_state["trigger_browser_gps_police"] = False
+
+        c_lat = float(st.session_state.get("exact_gps_lat", 13.0068))
+        c_lon = float(st.session_state.get("exact_gps_lon", 76.1038))
+        c_acc = float(st.session_state.get("exact_gps_acc", 5.0))
+        c_addr = st.session_state.get("exact_gps_addr", "Hassan City Center, Karnataka")
+
+        st.markdown(
+            f"""
+            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%); border: 2px solid #10b981; border-radius: 14px; padding: 1rem 1.25rem; margin-top: 0.3rem; margin-bottom: 0.6rem; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.76rem; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 0.06em;">{t("current_loc_active", lang)}</span>
+                    <span style="font-size: 0.72rem; color: #042f2e; background: #34d399; padding: 2px 8px; border-radius: 9999px; font-weight: 800;">±{c_acc:.0f}m {t("accuracy_label", lang)}</span>
+                </div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin: 5px 0; font-family: 'Outfit', sans-serif;">📍 {c_addr}</div>
+                <div style="font-size: 0.85rem; color: #cbd5e1;">{t("coordinates_label", lang)} <b style="color: #34d399;">{c_lat:.5f}° N, {c_lon:.5f}° E</b></div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # ISP Mismatch Notice if Wi-Fi IP in Bengaluru detected
+        if st.session_state.get("isp_mismatch_warning_police"):
+            isp_lat, isp_lon, isp_acc = st.session_state["isp_mismatch_warning_police"]
+            st.markdown(
+                f"""
+                <div style="background: rgba(245, 158, 11, 0.15); border: 1.5px solid #f59e0b; border-radius: 10px; padding: 0.75rem 0.9rem; margin-bottom: 0.6rem;">
+                    <div style="font-size: 0.85rem; font-weight: 800; color: #fbbf24;">{t("isp_warning_title", lang)} ({isp_lat:.4f}° N, {isp_lon:.4f}° E)</div>
+                    <div style="font-size: 0.78rem; color: #e2e8f0; margin-top: 2px; line-height: 1.4;">
+                        {t("isp_warning_desc", lang)}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+            if st.button(f"{t('force_isp_btn', lang)} ({isp_lat:.4f}, {isp_lon:.4f})", key="police_force_isp_loc_btn"):
+                st.session_state["exact_gps_lat"] = isp_lat
+                st.session_state["exact_gps_lon"] = isp_lon
+                st.session_state["exact_gps_acc"] = isp_acc
+                st.session_state["exact_gps_addr"] = reverse_geocode_osm(isp_lat, isp_lon)
+                st.session_state.pop("isp_mismatch_warning_police", None)
+                st.rerun()
+
+        # Search bar for any custom area, village, or PIN code
+        st.markdown(f"<div style='font-size:0.8rem; color:#cbd5e1; margin-top:0.4rem;'>{t('search_area_label', lang)}</div>", unsafe_allow_html=True)
+        p_search_col1, p_search_col2 = st.columns([3, 1])
+        with p_search_col1:
+            cur_area_search = st.text_input("Enter your current locality / village:", placeholder="e.g. Kuvempu Nagar, Dudda, Shantigrama, 573201...", key="police_search_curr_area_pin", label_visibility="collapsed")
+        with p_search_col2:
+            if st.button(t("set_pin_btn", lang), key="police_set_typed_pin_btn", use_container_width=True):
+                if cur_area_search.strip():
+                    q_str = cur_area_search.strip().lower()
+                    if q_str in KARNATAKA_LOCATIONS:
+                        lat, lon, label, dist = KARNATAKA_LOCATIONS[q_str]
+                        st.session_state["exact_gps_lat"] = lat
+                        st.session_state["exact_gps_lon"] = lon
+                        st.session_state["exact_gps_addr"] = label
+                        st.session_state["exact_gps_acc"] = 5.0
+                        st.session_state.pop("isp_mismatch_warning_police", None)
+                        st.rerun()
+                    else:
+                        p_res = geocode_osm_india(f"{cur_area_search.strip()}, Hassan") or geocode_osm_india(cur_area_search.strip())
+                        if p_res:
+                            st.session_state["exact_gps_lat"] = p_res[0]
+                            st.session_state["exact_gps_lon"] = p_res[1]
+                            st.session_state["exact_gps_addr"] = p_res[2]
+                            st.session_state["exact_gps_acc"] = 5.0
+                            st.session_state.pop("isp_mismatch_warning_police", None)
+                            st.rerun()
+                        else:
+                            st.error(f"Could not locate '{cur_area_search}'. Try adding district or 6-digit PIN code.")
+
+        # Controls: Browser GPS & Interactive Map Picker
+        p_loc_action1, p_loc_action2 = st.columns([1, 1])
+        with p_loc_action1:
+            if st.button(t("detect_gps_btn", lang), key="police_trigger_browser_gps_btn", use_container_width=True):
+                st.session_state["trigger_browser_gps_police"] = True
+                st.rerun()
+        with p_loc_action2:
+            p_show_picker = st.checkbox(t("map_picker_label", lang), value=False, key="police_show_map_pin_picker")
+
+        if p_show_picker and folium is not None and st_folium is not None:
+            st.caption(t("map_picker_caption", lang))
+            try:
+                m_pick = folium.Map(location=[c_lat, c_lon], zoom_start=13, tiles="OpenStreetMap")
+                folium.Marker([c_lat, c_lon], tooltip=f"Current Pin: {c_addr}", icon=folium.Icon(color="green", icon="user", prefix="fa")).add_to(m_pick)
+                pick_data = st_folium(m_pick, height=240, width=None, key="interactive_police_pin_picker")
+                if pick_data and pick_data.get("last_clicked"):
+                    clicked_lat = round(float(pick_data["last_clicked"]["lat"]), 5)
+                    clicked_lon = round(float(pick_data["last_clicked"]["lng"]), 5)
+                    if abs(clicked_lat - c_lat) > 0.0001 or abs(clicked_lon - c_lon) > 0.0001:
+                        st.session_state["exact_gps_lat"] = clicked_lat
+                        st.session_state["exact_gps_lon"] = clicked_lon
+                        st.session_state["exact_gps_acc"] = 2.0
+                        st.session_state["exact_gps_addr"] = reverse_geocode_osm(clicked_lat, clicked_lon)
+                        st.session_state.pop("isp_mismatch_warning_police", None)
+                        st.rerun()
+            except Exception as e:
+                st.warning("Map picker preview: " + str(e))
+
+        user_lat = c_lat
+        user_lon = c_lon
+        location_description = c_addr
+        user_acc = c_acc
+        target_district = detect_district_from_string(c_addr)
 
     # Filter dataframe by category
     filtered_df = df_police.copy()
@@ -2638,9 +2812,8 @@ def page_police_stations(df_police: pd.DataFrame | None, lang: str = "English"):
     st.markdown(f"<h3 style='color: #f3f4f6; font-family: Outfit, sans-serif;'>⚡ {t('nearest_station_badge', lang)}: <span style='color: #818cf8;'>{location_description}</span></h3>", unsafe_allow_html=True)
 
     # Interactive Folium View showing the single closest police station
-    render_folium_police_map(user_lat, user_lon, location_description, top_1)
+    render_folium_police_map(user_lat, user_lon, location_description, top_1, is_live=is_live_loc, acc_m=user_acc)
 
-    st.markdown("<br>", unsafe_allow_html=True)
 
     st_row = top_1.iloc[0]
     dist_val = st_row["distance_km"]
